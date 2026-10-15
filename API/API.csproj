@@ -7,7 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.16" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.14" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.14">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.14" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.17.0" />
   </ItemGroup>
 
 </Project>

@@ -1,40 +1,107 @@
 <header class="p-3 w-full fixed top-0 z-50 bg-gradient-to-r from-primary to-black shadow-md">
-    <div class="flex items-center px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto gap-6">
+    <div class="flex items-center px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto gap-4">
+        <!-- Logo / App Name -->
         <div class="text-white">
             <a routerLink="/" routerLinkActive="text-accent" [routerLinkActiveOptions]="{exact: true}"
-                class="flex items-center gap-3 max-h-16 border-r-white border-r-2 pr-6">
+                class="flex items-center gap-3 max-h-16 border-r-white border-r-2 pr-4 sm:pr-6">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-7">
                     <path
                         d="M4.5 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM14.25 8.625a3.375 3.375 0 1 1 6.75 0 3.375 3.375 0 0 1-6.75 0ZM1.5 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM17.25 19.128l-.001.144a2.25 2.25 0 0 1-.233.96 10.088 10.088 0 0 0 5.06-1.01.75.75 0 0 0 .42-.643 4.875 4.875 0 0 0-6.957-4.611 8.586 8.586 0 0 1 1.71 5.157v.003Z" />
                 </svg>
-
-                <h3 class="text-2xl font-semibold uppercase">Dating app</h3>
+                <h3 class="text-xl sm:text-2xl font-semibold uppercase tracking-wider">Dating app</h3>
             </a>
         </div>
 
-        <nav class="flex gap-4 my-2 uppercase text-lg text-white">
-            <a routerLink="/" routerLinkActive="text-accent" [routerLinkActiveOptions]="{exact: true}">Home</a>
+        <!-- Navigation Links -->
+        <nav class="hidden md:flex gap-4 my-2 uppercase text-base font-medium text-white">
+            <a routerLink="/" routerLinkActive="text-accent" [routerLinkActiveOptions]="{exact: true}" class="hover:text-accent transition-colors">Home</a>
         </nav>
 
-        <div class="flex align-middle ml-auto gap-3">
-            <div class="dropdown mr-5 dropdown-end">
-                <button tabindex="1" class="flex flex-col justify-center align-middle 
-                    text-white cursor-pointer uppercase text-xs">
+        <!-- Right Side: Theme Switcher & Auth Section -->
+        <div class="flex items-center ml-auto gap-3">
+            <!-- Theme Selector -->
+            <div class="dropdown dropdown-end">
+                <button tabindex="0" class="flex flex-col justify-center items-center text-white cursor-pointer uppercase text-xs hover:opacity-80 transition-opacity">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor" class="size-6 flex self-center">
+                        stroke="currentColor" class="size-6">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42" />
                     </svg>
-                    <span>{{selectedTheme()}}</span>
+                    <span class="text-[10px]">{{selectedTheme()}}</span>
                 </button>
-                <ul tabindex="1" class="dropdown-content z-50 menu bg-base-100 rounded-box w-52 p-2 shadow-sm">
+                <ul tabindex="0" class="dropdown-content z-50 menu bg-base-100 text-base-content rounded-box w-52 p-2 shadow-2xl max-h-72 overflow-y-auto overflow-x-hidden flex flex-col flex-nowrap">
                     @for (theme of themes; track $index) {
-                    <li (click)="handleSelectTheme(theme)">
-                        <a>{{theme}}</a>
+                    <li (click)="handleSelectTheme(theme)" class="w-full">
+                        <a class="capitalize flex justify-between items-center py-2 px-3 w-full" [class.active]="selectedTheme() === theme">
+                            <span>{{theme}}</span>
+                            @if (selectedTheme() === theme) {
+                                <svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            }
+                        </a>
                     </li>
                     }
                 </ul>
             </div>
+
+            <!-- Logged In User Dropdown -->
+            @if (accountService.currentUser()) {
+                <div class="dropdown dropdown-end">
+                    <div tabindex="0" role="button" class="btn btn-sm btn-ghost text-white flex items-center gap-2 normal-case border border-white/20 hover:bg-white/10">
+                        <div class="avatar placeholder">
+                            <div class="bg-accent text-neutral-content rounded-full w-7 h-7 flex items-center justify-center">
+                                <span class="text-xs uppercase font-bold text-accent-content leading-none select-none flex items-center justify-center">
+                                    {{ accountService.currentUser()?.username?.charAt(0) }}
+                                </span>
+                            </div>
+                        </div>
+                        <span class="font-semibold capitalize text-sm">
+                            {{ accountService.currentUser()?.username }}
+                        </span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                    <ul tabindex="0" class="dropdown-content menu p-2 shadow-xl bg-base-100 text-base-content rounded-box w-48 z-50 mt-2">
+                        <li class="menu-title px-4 py-1 text-xs opacity-60">
+                            Signed in as <b class="capitalize text-primary">{{ accountService.currentUser()?.username }}</b>
+                        </li>
+                        <div class="divider my-1"></div>
+                        <li>
+                            <a (click)="logout()" class="text-error font-medium hover:bg-error/10">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            } @else {
+                <!-- Login Form (Only Username and Password) -->
+                <form #loginForm="ngForm" (ngSubmit)="login()" autocomplete="off" class="flex items-center gap-2">
+                    <input 
+                        type="text" 
+                        name="username" 
+                        [(ngModel)]="model.username" 
+                        placeholder="Username" 
+                        required
+                        class="input input-sm input-bordered bg-white/10 text-white placeholder-white/60 focus:bg-white/20 focus:outline-none focus:border-accent w-28 sm:w-36 text-xs sm:text-sm" />
+                    
+                    <input 
+                        type="password" 
+                        name="password" 
+                        [(ngModel)]="model.password" 
+                        placeholder="Password" 
+                        required
+                        class="input input-sm input-bordered bg-white/10 text-white placeholder-white/60 focus:bg-white/20 focus:outline-none focus:border-accent w-28 sm:w-36 text-xs sm:text-sm" />
+                    
+                    <button type="submit" class="btn btn-sm btn-success text-white font-semibold shadow hover:brightness-110">
+                        Login
+                    </button>
+                </form>
+            }
         </div>
     </div>
 </header>
