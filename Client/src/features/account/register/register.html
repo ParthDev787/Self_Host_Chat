@@ -1,0 +1,57 @@
+<div class="card w-full max-w-md bg-base-100 shadow-2xl border border-base-300 mx-auto">
+    <div class="card-body">
+        <div class="text-center mb-4">
+            <h2 class="text-3xl font-extrabold text-primary">Sign Up</h2>
+            <p class="text-sm opacity-70 mt-1">Create an account with just a unique username & password</p>
+        </div>
+
+        <form #registerForm="ngForm" (ngSubmit)="register()" autocomplete="off" class="flex flex-col gap-4">
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text font-medium">Username</span>
+                </label>
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        name="username" 
+                        [(ngModel)]="model.username" 
+                        placeholder="Choose a unique username" 
+                        required 
+                        minlength="3"
+                        class="input input-bordered w-full focus:input-primary pl-10" />
+                    <svg xmlns="http://www.w3.org/2000/svg" class="size-5 absolute left-3 top-3 text-base-content/50" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text font-medium">Password</span>
+                </label>
+                <div class="relative">
+                    <input 
+                        type="password" 
+                        name="password" 
+                        [(ngModel)]="model.password" 
+                        placeholder="Choose a password (min 4 characters)" 
+                        required 
+                        minlength="4"
+                        class="input input-bordered w-full focus:input-primary pl-10" />
+                    <svg xmlns="http://www.w3.org/2000/svg" class="size-5 absolute left-3 top-3 text-base-content/50" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="card-actions justify-end mt-4 gap-3">
+                <button type="button" (click)="cancel()" class="btn btn-ghost">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary px-6 shadow-md">
+                    Register
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
