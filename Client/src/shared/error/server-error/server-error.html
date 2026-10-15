@@ -1,0 +1,13 @@
+<div class="card bg-base-100 gap-3 w-4xl mx-auto flex flex-col items-center rounded-xl shadow-xl p-10">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-32 h-32 text-error">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 4.5l-.75 2.25M14.25 4.5l.75 2.25M4.5 9.75h15M7.5 15.75a4.5 4.5 0 1 0 9 0M12 9.75v6M9.75 20.25h4.5" />
+  </svg>
+  <h1 class="card-title text-4xl justify-center">Server error</h1>
+  <p class="card-body text-xl text-center">{{ error()?.message || 'This is a server error' }}</p>
+  <button class="btn btn-primary" (click)="detailsToggle()">Details</button>
+  @if(showDetails) {
+    <div class="card bg-base-100 flex mt-5 rounded-2xl w-1/2 p-3 mx-auto">
+      <p class="text-red-600">{{ error()?.details }}</p>
+    </div>
+  }
+</div>
