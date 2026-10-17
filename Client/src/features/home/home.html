@@ -1,47 +1,810 @@
-<div class="max-w-5xl mx-auto mt-10 px-4">
-    @if (!accountService.currentUser()) {
-        @if (!registerMode()) {
-            <div class="hero bg-base-200 min-h-[65vh] rounded-3xl shadow-xl p-8 flex flex-col justify-center items-center text-center">
-                <div class="hero-content flex-col">
-                    <div class="p-4 bg-primary/10 rounded-full mb-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-24 text-primary">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
-                        </svg>
-                    </div>
+<!-- ══════════════════════════════════════════════════════════════
+     AUTH SCREEN (Not logged in) – Login / Register
+     ══════════════════════════════════════════════════════════════ -->
+@if (!isLoggedIn()) {
+<div class="auth-container">
+  <!-- Decorative floating circles -->
+  <div class="auth-decoration" style="width: 350px; height: 350px; top: -100px; left: -100px;"></div>
+  <div class="auth-decoration" style="width: 250px; height: 250px; bottom: -80px; right: -60px;"></div>
+  <div class="auth-decoration" style="width: 180px; height: 180px; top: 35%; right: 8%;"></div>
+  <div class="auth-decoration" style="width: 120px; height: 120px; bottom: 20%; left: 15%;"></div>
 
-                    <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight">Find Your Match</h1>
-                    <p class="py-4 text-lg text-base-content/80 max-w-lg">
-                        Come on in to view your matches... all you need is a unique username and password!
-                    </p>
+  <div class="auth-card">
+    @if (isLoginMode()) {
+    <!-- ──── LOGIN ──── -->
+    <div class="text-center mb-8">
+      <div class="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-9 h-9">
+          <path d="m11.645 20.91-.007-.003-.022-.012a15.247 15.247 0 0 1-.383-.218 25.18 25.18 0 0 1-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0 1 12 5.052 5.5 5.5 0 0 1 16.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 0 1-4.244 3.17 15.247 15.247 0 0 1-.383.219l-.022.012-.007.004-.003.001a.752.752 0 0 1-.704 0l-.003-.001Z" />
+        </svg>
+      </div>
+      <h1 class="text-3xl font-bold tracking-tight">Welcome Back</h1>
+      <p class="text-white/50 mt-2 text-sm">Sign in to continue to Dating App</p>
+    </div>
 
-                    <div class="flex gap-4 mt-2">
-                        <button (click)="registerToggle()" class="btn btn-primary btn-wide shadow-lg text-base font-semibold">
-                            Register Now
-                        </button>
-                    </div>
-                </div>
-            </div>
-        } @else {
-            <div class="py-8">
-                <app-register (cancelRegister)="cancelRegisterMode($event)"></app-register>
-            </div>
-        }
+    <form (ngSubmit)="login()" autocomplete="off" class="flex flex-col gap-4">
+      <div class="relative">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+          class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
+          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+        </svg>
+        <input class="auth-input" type="text" name="username"
+          [(ngModel)]="loginModel.username" placeholder="Username" required />
+      </div>
+      <div class="relative">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+          class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
+          <path fill-rule="evenodd"
+            d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+            clip-rule="evenodd" />
+        </svg>
+        <input class="auth-input" type="password" name="password"
+          [(ngModel)]="loginModel.password" placeholder="Password" required />
+      </div>
+      <button class="auth-btn mt-2" type="submit">Sign In</button>
+    </form>
+
+    <div class="text-center mt-8 text-white/55 text-sm">
+      Don't have an account?
+      <button (click)="isLoginMode.set(false)"
+        class="text-white font-semibold ml-1 hover:underline cursor-pointer bg-transparent border-none text-sm">
+        Register
+      </button>
+    </div>
+
     } @else {
-        <!-- Logged-in Dashboard Hero -->
-        <div class="hero bg-base-200 min-h-[60vh] rounded-3xl shadow-xl p-8 flex flex-col justify-center items-center text-center">
-            <div class="hero-content flex-col">
-                <div class="avatar placeholder mb-4">
-                    <div class="bg-primary text-primary-content rounded-full w-24 h-24 flex items-center justify-center ring ring-primary ring-offset-base-100 ring-offset-2">
-                        <span class="text-4xl uppercase font-bold leading-none select-none flex items-center justify-center">
-                            {{ accountService.currentUser()?.username?.charAt(0) }}
-                        </span>
-                    </div>
-                </div>
+    <!-- ──── REGISTER ──── -->
+    <div class="text-center mb-8">
+      <div class="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-9 h-9">
+          <path
+            d="M11 5a3 3 0 11-6 0 3 3 0 016 0zM2.615 16.428a1.224 1.224 0 01-.569-1.175 6.002 6.002 0 0111.908 0c.058.467-.172.92-.57 1.174A9.953 9.953 0 018 18a9.953 9.953 0 01-5.385-1.572zM16.25 5.75a.75.75 0 00-1.5 0v2h-2a.75.75 0 000 1.5h2v2a.75.75 0 001.5 0v-2h2a.75.75 0 000-1.5h-2v-2z" />
+        </svg>
+      </div>
+      <h1 class="text-3xl font-bold tracking-tight">Create Account</h1>
+      <p class="text-white/50 mt-2 text-sm">Join and find your perfect match</p>
+    </div>
 
-                <h1 class="text-3xl sm:text-4xl font-extrabold">
-                    Welcome back, <span class="text-primary capitalize">{{ accountService.currentUser()?.username }}</span>!
-                </h1>
-            </div>
-        </div>
+    <form (ngSubmit)="register()" autocomplete="off" class="flex flex-col gap-4">
+      <div class="relative">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+          class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
+          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+        </svg>
+        <input class="auth-input" type="text" name="reg-username"
+          [(ngModel)]="registerModel.username" placeholder="Choose a username" required />
+      </div>
+      <div class="relative">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+          class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
+          <path fill-rule="evenodd"
+            d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+            clip-rule="evenodd" />
+        </svg>
+        <input class="auth-input" type="password" name="reg-password"
+          [(ngModel)]="registerModel.password" placeholder="Choose a password" required />
+      </div>
+      <button class="auth-btn mt-2" type="submit">Create Account</button>
+    </form>
+
+    <div class="text-center mt-8 text-white/55 text-sm">
+      Already have an account?
+      <button (click)="isLoginMode.set(true)"
+        class="text-white font-semibold ml-1 hover:underline cursor-pointer bg-transparent border-none text-sm">
+        Sign In
+      </button>
+    </div>
     }
+  </div>
 </div>
+
+} @else {
+
+<!-- ══════════════════════════════════════════════════════════════
+     DASHBOARD (Logged in) – Sidebar + Chat
+     ══════════════════════════════════════════════════════════════ -->
+<div class="flex h-screen overflow-hidden">
+
+  <!-- Invisible backdrop to close dropdown menus when clicking outside -->
+  @if (showProfileMenu() || showNotifications()) {
+    <div class="fixed inset-0 z-30" (click)="closeDropdowns()"></div>
+  }
+
+  <!-- ──── LEFT SIDEBAR ──── -->
+  <aside class="w-[360px] min-w-[360px] flex flex-col h-screen border-r border-base-300 bg-base-200">
+
+    <!-- Sidebar Header -->
+    <div class="flex items-center gap-3 p-4 border-b border-base-300 shrink-0">
+      <!-- Profile Avatar Button -->
+      <div class="relative z-40">
+        <button (click)="toggleProfileMenu()" type="button"
+          class="avatar-circle clickable cursor-pointer" style="background: #6366f1">
+          {{ getInitial() }}
+        </button>
+
+        <!-- Profile Dropdown -->
+        @if (showProfileMenu()) {
+        <div class="dropdown-panel bg-base-100 text-base-content" style="left: 0; min-width: 240px;">
+          <div class="p-4 border-b border-base-300">
+            <div class="flex items-center gap-3">
+              <div class="avatar-circle avatar-sm" style="background: #6366f1">{{ getInitial() }}</div>
+              <div>
+                <p class="font-bold capitalize">{{ accountService.currentUser()?.username }}</p>
+                <p class="text-xs opacity-50">Online</p>
+              </div>
+            </div>
+          </div>
+          <div class="profile-menu-item" (click)="openEditProfile()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+              stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+            </svg>
+            Edit Profile
+          </div>
+          <div class="profile-menu-item" (click)="openLogsModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+              stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+            Request Logs (7 Days)
+          </div>
+          <div class="profile-menu-item" (click)="openEncryptionInfo()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+              stroke="currentColor" class="w-5 h-5 text-emerald-500">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+            </svg>
+            Security & Encryption Policy
+          </div>
+          <div class="profile-menu-item text-error" (click)="logout()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+              stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+            </svg>
+            Logout
+          </div>
+        </div>
+        }
+      </div>
+
+      <!-- Title -->
+      <h2 class="text-lg font-bold flex-1">Messages</h2>
+
+      <!-- Connect People Button (+) -->
+      <button (click)="openConnectPopup()" type="button" title="Connect with people (+)"
+        class="btn btn-ghost btn-circle btn-sm bg-base-300/60 hover:bg-primary hover:text-white transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+          stroke="currentColor" class="w-5 h-5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+      </button>
+
+      <!-- Notification Bell with Red Badge -->
+      <div class="relative z-40">
+        <button (click)="toggleNotifications()" type="button"
+          class="btn btn-ghost btn-circle btn-sm relative">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+          </svg>
+          @if (unreadNotifCount() > 0) {
+            <span class="notif-badge">{{ unreadNotifCount() }}</span>
+          }
+        </button>
+
+        <!-- Notifications Dropdown Panel -->
+        @if (showNotifications()) {
+        <div class="dropdown-panel bg-base-100 text-base-content" style="right: 0; width: 350px;">
+          <div class="p-4 border-b border-base-300 flex items-center justify-between">
+            <h3 class="font-bold">Notifications</h3>
+            @if (unreadNotifCount() > 0) {
+              <span class="badge badge-primary badge-sm">{{ unreadNotifCount() }} pending</span>
+            } @else {
+              <span class="badge badge-ghost badge-sm">all clear</span>
+            }
+          </div>
+          <div class="max-h-80 overflow-y-auto">
+            @for (req of notifications(); track req.id) {
+            <div class="notif-item border-b border-base-300/50" [class.bg-error/5]="req.isOutgoingRejection">
+              <div class="avatar-circle avatar-sm shrink-0" [style.background]="req.avatarColor">{{ req.avatarLetter }}</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <p class="font-semibold text-sm">{{ req.displayName || req.fromUsername }}</p>
+                  @if (req.isOutgoingRejection) {
+                    <span class="badge badge-xs badge-error text-white font-medium">Rejected</span>
+                  }
+                </div>
+                <p class="text-xs opacity-50">{{ req.timestamp }}</p>
+                @if (req.isOutgoingRejection) {
+                  <p class="text-xs text-error font-medium mt-1">Your join request was rejected</p>
+                } @else if (req.message) {
+                  <p class="text-xs bg-base-200 p-1.5 rounded-lg mt-1 text-base-content/80 break-words font-medium">"{{ req.message }}"</p>
+                }
+              </div>
+              <div class="shrink-0 flex items-center gap-1">
+                @if (req.isOutgoingRejection) {
+                  <button (click)="dismissNotification(req)" type="button" class="btn btn-xs btn-outline btn-error">Dismiss</button>
+                } @else if (req.status === 'pending') {
+                  <button (click)="acceptRequest(req)" type="button" class="btn btn-xs btn-success text-white">Accept</button>
+                  <button (click)="rejectRequest(req)" type="button" class="btn btn-xs btn-ghost text-error">Reject</button>
+                } @else if (req.status === 'accepted') {
+                  <span class="badge badge-sm badge-success text-white">Connected</span>
+                } @else {
+                  <span class="badge badge-sm badge-ghost opacity-50">Rejected</span>
+                }
+              </div>
+            </div>
+            } @empty {
+            <div class="p-8 text-center opacity-40 text-sm">No connection requests yet</div>
+            }
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="p-3 border-b border-base-300/50 shrink-0">
+      <div class="relative">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+          stroke="currentColor" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 opacity-40">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+        <input type="text" placeholder="Search contacts..."
+          class="input input-sm w-full pl-9 bg-base-300/40 border-none focus:bg-base-300/70 transition-colors"
+          [ngModel]="searchText()" (ngModelChange)="searchText.set($event)" />
+      </div>
+    </div>
+
+    <!-- Pending Connection Requests Banner -->
+    @if (unreadNotifCount() > 0) {
+    <div (click)="toggleNotifications()"
+      class="bg-primary/15 border-b border-primary/30 px-4 py-2.5 flex items-center justify-between cursor-pointer hover:bg-primary/25 transition-all">
+      <div class="flex items-center gap-2.5">
+        <span class="relative flex h-2.5 w-2.5">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-error"></span>
+        </span>
+        <span class="text-xs font-bold text-primary">
+          {{ unreadNotifCount() }} new notification{{ unreadNotifCount() > 1 ? 's' : '' }}!
+        </span>
+      </div>
+      <span class="text-[11px] font-bold text-primary underline">Review</span>
+    </div>
+    }
+
+    <!-- Live Contact List -->
+    <div class="sidebar-contacts flex-1 overflow-y-auto">
+      @for (contact of filteredContacts(); track contact.id) {
+      <div class="contact-item"
+        [class.active]="selectedContact()?.username?.toLowerCase() === contact.username.toLowerCase()"
+        (click)="selectContact(contact)">
+        <div class="relative">
+          <div class="avatar-circle" [style.background]="contact.avatarColor">{{ contact.avatarLetter }}</div>
+          <div class="status-dot status-online"></div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-sm truncate" [class.font-bold]="contact.unreadCount > 0">{{ contact.username }}</span>
+            <span class="text-[11px] shrink-0"
+              [class.text-emerald-500]="contact.unreadCount > 0"
+              [class.font-bold]="contact.unreadCount > 0"
+              [class.opacity-40]="contact.unreadCount === 0">
+              {{ contact.lastMessageTime }}
+            </span>
+          </div>
+          <div class="flex justify-between items-center gap-1.5 mt-0.5">
+            <div class="flex items-center gap-1 min-w-0 flex-1">
+              @if (contact.lastMessageIsMine) {
+                @if (contact.lastMessageIsRead) {
+                  <!-- WhatsApp Read Double Blue Ticks -->
+                  <svg class="w-3.5 h-3 text-sky-400 shrink-0" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="2" title="Read">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M1.5 8.5l3 3 6-7" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.5l3 3 6-7" />
+                  </svg>
+                } @else if (contact.lastMessageIsDelivered) {
+                  <!-- WhatsApp Delivered Double Gray Ticks -->
+                  <svg class="w-3.5 h-3 opacity-50 shrink-0" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="2" title="Delivered">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M1.5 8.5l3 3 6-7" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.5l3 3 6-7" />
+                  </svg>
+                } @else {
+                  <!-- WhatsApp Sent Single Gray Tick -->
+                  <svg class="w-3 h-3 opacity-50 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" title="Sent">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.5 8.5l3 3 6-7" />
+                  </svg>
+                }
+              }
+              <p class="text-xs truncate flex-1"
+                [class.font-semibold]="contact.unreadCount > 0"
+                [class.text-base-content]="contact.unreadCount > 0"
+                [class.opacity-50]="contact.unreadCount === 0">
+                {{ contact.lastMessage }}
+              </p>
+            </div>
+
+            <!-- WhatsApp Green Dot / Unread Count Badge on Right Side -->
+            @if (contact.unreadCount > 0 && selectedContact()?.username?.toLowerCase() !== contact.username.toLowerCase()) {
+              <span class="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-emerald-500 text-white font-bold text-[11px] flex items-center justify-center shadow-xs animate-pulse">
+                {{ contact.unreadCount }}
+              </span>
+            }
+          </div>
+        </div>
+      </div>
+      } @empty {
+      <div class="flex flex-col items-center justify-center p-8 text-center opacity-40 h-full">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.2"
+          stroke="currentColor" class="w-12 h-12 mb-3">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+        </svg>
+        <p class="font-medium text-sm">No contacts yet</p>
+        <p class="text-xs mt-1">Click the <span class="font-bold">+</span> button above to copy your invite link or connect with others!</p>
+      </div>
+      }
+    </div>
+  </aside>
+
+  <section class="flex-1 flex flex-col h-screen bg-base-100 relative">
+
+    @if (selectedContact()) {
+
+    <!-- Chat Header -->
+    <div class="flex items-center gap-3 px-6 py-3.5 border-b border-base-300 bg-base-100 shrink-0 shadow-sm">
+      <div class="relative">
+        <div class="avatar-circle" [style.background]="selectedContact()!.avatarColor">
+          {{ selectedContact()!.avatarLetter }}
+        </div>
+        <div class="status-dot status-online"></div>
+      </div>
+      <div class="flex-1">
+        <h3 class="font-bold text-base">{{ selectedContact()!.username }}</h3>
+        <p class="text-xs text-success font-medium">Online</p>
+      </div>
+
+      <!-- E2EE Security Badge -->
+      <button (click)="openEncryptionInfo()" type="button"
+        class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all font-medium cursor-pointer"
+        title="Messages are end-to-end encrypted with Signal Protocol. Click to inspect cryptographic security.">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5">
+          <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clip-rule="evenodd" />
+        </svg>
+        <span>End-to-End Encrypted</span>
+      </button>
+    </div>
+
+    <!-- Live Messages Stream -->
+    <div #messagesContainer (scroll)="onMessagesScroll()" class="messages-container">
+      <!-- WhatsApp Style E2EE Notice -->
+      <div class="my-3 mx-auto max-w-lg p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center text-xs text-amber-700 dark:text-amber-300 flex items-center justify-center gap-2 shadow-xs select-none">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 shrink-0 text-amber-500">
+          <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clip-rule="evenodd" />
+        </svg>
+        <span>Messages to this chat are end-to-end encrypted with <strong>Signal Protocol</strong> (X3DH • Double Ratchet • AES-256 • HMAC-SHA256).</span>
+      </div>
+
+      @for (msg of selectedContact()!.messages; track msg.id) {
+      @if (msg.id === firstUnreadMessageId()) {
+        <!-- WhatsApp-Style Unread Messages Divider with Top Padding -->
+        <div id="unread-divider" class="my-5 flex items-center justify-center gap-3 select-none px-4 pt-1">
+          <div class="h-[1px] flex-1 bg-emerald-500/30"></div>
+          <div class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 shadow-xs flex items-center gap-1.5 uppercase tracking-wide">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5 text-emerald-500">
+              <path fill-rule="evenodd" d="M10 2a.75.75 0 0 1 .75.75v12.59l1.95-2.1a.75.75 0 1 1 1.1 1.02l-3.25 3.5a.75.75 0 0 1-1.1 0l-3.25-3.5a.75.75 0 1 1 1.1-1.02l1.95 2.1V2.75A.75.75 0 0 1 10 2Z" clip-rule="evenodd" />
+            </svg>
+            <span>{{ unreadCountInChat() }} UNREAD MESSAGE{{ unreadCountInChat() > 1 ? 'S' : '' }}</span>
+          </div>
+          <div class="h-[1px] flex-1 bg-emerald-500/30"></div>
+        </div>
+      }
+      <div [id]="'msg-' + msg.id" class="msg-bubble group transition-all"
+        [class.msg-mine]="msg.isMine"
+        [class.msg-theirs]="!msg.isMine"
+        [class.bg-primary]="msg.isMine"
+        [class.text-primary-content]="msg.isMine"
+        [class.bg-base-200]="!msg.isMine"
+        [class.text-base-content]="!msg.isMine">
+        <p class="break-words select-text">{{ msg.text }}</p>
+        <div class="flex items-center justify-end gap-1.5 mt-1 text-[11px]" [class.opacity-80]="msg.isMine" [class.opacity-50]="!msg.isMine">
+          <span>{{ msg.timestamp }}</span>
+          @if (msg.isEncrypted) {
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3 text-emerald-400 inline" title="Signal Protocol E2EE Verified">
+              <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clip-rule="evenodd" />
+            </svg>
+          }
+
+          @if (msg.isMine) {
+            <!-- WhatsApp Delivery & Read Tick Status -->
+            @if (msg.isRead) {
+              <!-- Double Blue Checkmarks (Read) -->
+              <svg class="w-4 h-3.5 text-sky-300 inline shrink-0" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="2.2" title="Read by recipient">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M1.5 8.5l3 3 6-7" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.5l3 3 6-7" />
+              </svg>
+            } @else if (msg.isDelivered) {
+              <!-- Double Gray Checkmarks (Delivered to phone) -->
+              <svg class="w-4 h-3.5 opacity-60 inline shrink-0" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="2.2" title="Delivered to recipient">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M1.5 8.5l3 3 6-7" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.5l3 3 6-7" />
+              </svg>
+            } @else {
+              <!-- Single Checkmark (Sent to server) -->
+              <svg class="w-3.5 h-3.5 opacity-60 inline shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" title="Sent to server">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.5 8.5l3 3 6-7" />
+              </svg>
+            }
+          }
+        </div>
+      </div>
+      } @empty {
+      <div class="flex-1 flex items-center justify-center opacity-30 text-sm">
+        <p>No messages yet with {{ selectedContact()!.username }}. Say hi! 👋</p>
+      </div>
+      }
+      <!-- End of messages scroll anchor & bottom breathing room -->
+      <div #messagesEnd class="h-4 shrink-0"></div>
+    </div>
+
+    <!-- Floating Jump-to-Bottom Button (WhatsApp style) -->
+    @if (showScrollToBottomBtn()) {
+      <button (click)="scrollToBottom(true)" type="button"
+        class="absolute bottom-20 right-8 w-10 h-10 rounded-full bg-base-100 dark:bg-base-200 text-base-content border border-base-300 shadow-xl flex items-center justify-center hover:bg-base-300 hover:scale-105 active:scale-95 transition-all z-30 cursor-pointer"
+        title="Scroll to bottom">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 text-primary">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+        </svg>
+      </button>
+    }
+
+    <!-- Chat Input Form -->
+    <div class="flex items-center gap-3 p-4 border-t border-base-300 bg-base-100 shrink-0">
+      <input type="text"
+        class="input input-bordered flex-1 rounded-full bg-base-200 border-base-300 focus:border-primary focus:outline-none"
+        placeholder="Type a message to {{ selectedContact()!.username }}..."
+        [ngModel]="messageText()" (ngModelChange)="messageText.set($event)"
+        (keyup.enter)="sendMessage()" />
+      <button class="send-btn bg-primary text-primary-content"
+        (click)="sendMessage()" [disabled]="!messageText().trim()" type="button" title="Send message">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+          <path
+            d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h6.115a.75.75 0 010 1.5H5.135a1.5 1.5 0 00-1.442 1.086l-1.414 4.926a.75.75 0 00.826.95 28.896 28.896 0 0015.293-7.154.75.75 0 000-1.115A28.897 28.897 0 003.105 2.289z" />
+        </svg>
+      </button>
+    </div>
+
+    } @else {
+
+    <!-- Empty Chat State -->
+    <div class="empty-chat">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"
+        class="w-24 h-24 opacity-30">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+      </svg>
+      <h3 class="text-xl font-bold">Select a conversation</h3>
+      <p class="text-sm">Choose a contact from the sidebar or click + to connect with someone</p>
+    </div>
+
+    }
+  </section>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     MODALS
+     ══════════════════════════════════════════════════════════════ -->
+
+<!-- Edit Profile Modal -->
+@if (showEditProfile()) {
+<div class="modal-overlay" (click)="showEditProfile.set(false)">
+  <div class="modal-card bg-base-100 text-base-content" (click)="$event.stopPropagation()">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-bold">Profile</h2>
+      <button (click)="showEditProfile.set(false)" type="button" class="btn btn-ghost btn-sm btn-circle">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+          stroke="currentColor" class="w-5 h-5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="flex flex-col items-center gap-3 mb-6">
+      <div class="avatar-circle avatar-lg" style="background: #6366f1">{{ getInitial() }}</div>
+      <p class="text-xl font-bold capitalize">{{ accountService.currentUser()?.username }}</p>
+      <span class="badge badge-success gap-1 text-xs">
+        <span class="w-2 h-2 rounded-full bg-green-900/30"></span>
+        Online
+      </span>
+    </div>
+
+    <div class="divider my-2"></div>
+
+    <div class="text-center text-sm opacity-50 py-4">
+      Account Status: Active & Connected
+    </div>
+
+    <div class="flex justify-end mt-4">
+      <button class="btn btn-primary" (click)="showEditProfile.set(false)" type="button">Done</button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- Request Logs Modal (Last 7 Days) -->
+@if (showLogsModal()) {
+<div class="modal-overlay" (click)="showLogsModal.set(false)">
+  <div class="modal-card bg-base-100 text-base-content max-w-2xl w-full" (click)="$event.stopPropagation()">
+    <div class="flex justify-between items-center mb-3">
+      <div>
+        <h2 class="text-xl font-bold flex items-center gap-2">
+          <span>📋 Request Logs</span>
+          <span class="badge badge-primary badge-sm">{{ loggerService.logs().length }} entries</span>
+        </h2>
+        <p class="text-xs opacity-60 mt-0.5">Every request is stored and retained for the last 7 days automatically.</p>
+      </div>
+      <button (click)="showLogsModal.set(false)" type="button" class="btn btn-ghost btn-sm btn-circle">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+          stroke="currentColor" class="w-5 h-5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Actions toolbar -->
+    <div class="flex justify-between items-center gap-2 mb-4 bg-base-200 p-2.5 rounded-xl border border-base-300">
+      <div class="text-xs opacity-70">
+        Retention: <strong class="text-success">7 Days Active</strong>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-sm btn-ghost text-error" (click)="loggerService.clearLogs()" type="button">
+          Clear
+        </button>
+        <button class="btn btn-sm btn-primary gap-1.5" (click)="downloadClientLogs()" type="button">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+            stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+          </svg>
+          Download .log File
+        </button>
+      </div>
+    </div>
+
+    <!-- Log list stream -->
+    <div class="max-h-96 overflow-y-auto flex flex-col gap-2 pr-1 font-mono text-xs">
+      @for (log of loggerService.logs(); track log.id) {
+      <div class="p-2.5 rounded-lg border border-base-300/60 bg-base-200/50 flex flex-col gap-1">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="badge badge-sm font-bold"
+              [class.badge-success]="log.method === 'GET'"
+              [class.badge-info]="log.method === 'POST'"
+              [class.badge-warning]="log.method === 'PUT'"
+              [class.badge-error]="log.method === 'DELETE'">
+              {{ log.method }}
+            </span>
+            <span class="font-semibold text-base-content break-all">{{ log.url }}</span>
+          </div>
+          <span class="badge badge-sm font-bold shrink-0 ml-2"
+            [class.badge-success]="log.status >= 200 && log.status < 300"
+            [class.badge-error]="log.status >= 400 || log.status === 0">
+            {{ log.status || 'ERR' }}
+          </span>
+        </div>
+        <div class="flex items-center justify-between text-[11px] opacity-60">
+          <span>{{ log.displayTime }}</span>
+          <span>{{ log.durationMs }}ms</span>
+        </div>
+        @if (log.message) {
+          <div class="text-[11px] text-error mt-0.5 bg-error/10 p-1.5 rounded">
+            {{ log.message }}
+          </div>
+        }
+      </div>
+      } @empty {
+      <div class="p-12 text-center opacity-40">
+        <p class="font-bold">No requests logged yet</p>
+        <p class="text-xs mt-1">Every outgoing API request will appear here and be stored for 7 days.</p>
+      </div>
+      }
+    </div>
+
+    <div class="flex justify-end mt-4">
+      <button class="btn btn-ghost" (click)="showLogsModal.set(false)" type="button">Close</button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- Connect People Modal (+) with Share Link & Join Tabs -->
+@if (showConnectPopup()) {
+<div class="modal-overlay" (click)="showConnectPopup.set(false)">
+  <div class="modal-card bg-base-100 text-base-content" (click)="$event.stopPropagation()">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-bold">Connect with People</h2>
+      <button (click)="showConnectPopup.set(false)" type="button" class="btn btn-ghost btn-sm btn-circle">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+          stroke="currentColor" class="w-5 h-5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Tabs: Share Link vs Join with Link -->
+    <div class="flex gap-2 border-b border-base-300 pb-3 mb-4">
+      <button type="button"
+        (click)="connectTab.set('share')"
+        class="flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition-all"
+        [class.bg-primary]="connectTab() === 'share'"
+        [class.text-primary-content]="connectTab() === 'share'"
+        [class.bg-base-200]="connectTab() !== 'share'"
+        [class.opacity-70]="connectTab() !== 'share'">
+        🔗 Share My Link
+      </button>
+      <button type="button"
+        (click)="connectTab.set('join')"
+        class="flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition-all"
+        [class.bg-primary]="connectTab() === 'join'"
+        [class.text-primary-content]="connectTab() === 'join'"
+        [class.bg-base-200]="connectTab() !== 'join'"
+        [class.opacity-70]="connectTab() !== 'join'">
+        ➕ Join with Link
+      </button>
+    </div>
+
+    <!-- ── TAB 1: Share My Link ── -->
+    @if (connectTab() === 'share') {
+      <p class="text-sm opacity-70 mb-3">
+        Copy your connection link and send it to friends. When they paste it in their "Join" tab, you will receive a notification to Accept or Reject!
+      </p>
+
+      <div class="bg-base-200 p-3.5 rounded-xl mb-4 border border-base-300">
+        <p class="text-xs font-mono break-all opacity-85 select-all">{{ connectionLink() }}</p>
+      </div>
+
+      <div class="flex gap-3 justify-end">
+        <button class="btn btn-ghost" (click)="showConnectPopup.set(false)" type="button">Cancel</button>
+        <button class="btn btn-primary gap-2" (click)="copyLink()" type="button">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
+          </svg>
+          Copy Link
+        </button>
+      </div>
+    }
+
+    <!-- ── TAB 2: Join with Link ── -->
+    @if (connectTab() === 'join') {
+      <p class="text-sm opacity-70 mb-3">
+        Paste a friend's connection link or enter their username to send them a connection request with a message:
+      </p>
+
+      <div class="flex flex-col gap-3 mb-5">
+        <div>
+          <label class="text-xs font-semibold opacity-60 block mb-1">Friend's Link or Username</label>
+          <input type="text"
+            placeholder="e.g. atul or paste http://..."
+            class="input input-bordered w-full bg-base-200 border-base-300 focus:border-primary focus:outline-none text-sm"
+            [ngModel]="joinInput()" (ngModelChange)="joinInput.set($event)" />
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold opacity-60 block mb-1">Message (Optional)</label>
+          <input type="text"
+            placeholder="e.g. Hi! Let's connect and chat."
+            class="input input-bordered w-full bg-base-200 border-base-300 focus:border-primary focus:outline-none text-sm"
+            [ngModel]="joinMessage()" (ngModelChange)="joinMessage.set($event)" />
+        </div>
+      </div>
+
+      <div class="flex gap-3 justify-end">
+        <button class="btn btn-ghost" (click)="showConnectPopup.set(false)" type="button">Cancel</button>
+        <button class="btn btn-primary gap-2"
+          [disabled]="!joinInput().trim()"
+          (click)="sendJoinRequest()" type="button">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+            stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+          </svg>
+          Send Join Request
+        </button>
+      </div>
+    }
+
+  </div>
+</div>
+}
+
+<!-- ── Security & Encryption Policy Modal ── -->
+@if (showEncryptionModal()) {
+<div class="modal-overlay" (click)="showEncryptionModal.set(false)">
+  <div class="modal-card bg-base-100 text-base-content max-w-2xl w-full p-6 shadow-2xl rounded-2xl border border-base-300" (click)="$event.stopPropagation()">
+    <div class="flex justify-between items-center pb-4 border-b border-base-300 mb-5">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+            <path fill-rule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold">Security & Encryption Policy</h2>
+          <p class="text-xs opacity-60">End-to-End Encryption Specifications (Signal Protocol)</p>
+        </div>
+      </div>
+      <button (click)="showEncryptionModal.set(false)" type="button" class="btn btn-ghost btn-sm btn-circle">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Policy Overview Banner -->
+    <div class="p-3.5 mb-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-3">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5">
+        <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clip-rule="evenodd" />
+      </svg>
+      <div class="text-xs">
+        <p class="font-bold text-emerald-800 dark:text-emerald-300 mb-0.5">Zero-Knowledge Architecture</p>
+        <p class="text-emerald-700/80 dark:text-emerald-400/80 leading-relaxed">
+          All messages are cryptographically sealed and scrambled on your device prior to transmission. The backend server acts solely as a blind transport relay and cannot decrypt or read your conversations.
+        </p>
+      </div>
+    </div>
+
+    <!-- Protocol Architecture Stages -->
+    <div class="space-y-3.5 max-h-[380px] overflow-y-auto pr-1">
+      <!-- 1. Key Setup & Double Ratchet -->
+      <div class="p-4 rounded-xl border border-purple-500/30 bg-purple-500/5 space-y-2">
+        <div class="flex items-center gap-2">
+          <span class="badge badge-sm bg-purple-600 text-white font-bold border-none">Steps 1–3</span>
+          <h3 class="font-bold text-sm text-purple-900 dark:text-purple-200">Key Setup & Double Ratchet</h3>
+        </div>
+        <ul class="text-xs space-y-1.5 opacity-85 leading-relaxed list-disc list-inside">
+          <li><strong>Step 1 (Key Generation):</strong> Each device generates an ECDH P-256 Identity Key Pair. The public key is published to the directory; the private key remains secure on the user's device.</li>
+          <li><strong>Step 2 (X3DH Agreement):</strong> Devices mutually compute a shared master secret locally without ever transmitting it over the network.</li>
+          <li><strong>Step 3 (Double Ratchet):</strong> Derives brand new ephemeral keys for every individual message via HKDF-SHA256, guaranteeing Perfect Forward Secrecy (PFS) and break-in recovery.</li>
+        </ul>
+      </div>
+
+      <!-- 2. Message Protection -->
+      <div class="p-4 rounded-xl border border-teal-500/30 bg-teal-500/5 space-y-2">
+        <div class="flex items-center gap-2">
+          <span class="badge badge-sm bg-teal-600 text-white font-bold border-none">Steps 4–5</span>
+          <h3 class="font-bold text-sm text-teal-900 dark:text-teal-200">Message Protection (AES-256 & HMAC)</h3>
+        </div>
+        <ul class="text-xs space-y-1.5 opacity-85 leading-relaxed list-disc list-inside">
+          <li><strong>Step 4 (AES-256-CBC):</strong> The message text is scrambled using symmetric 256-bit encryption with a unique, cryptographically random 16-byte IV.</li>
+          <li><strong>Step 5 (HMAC-SHA256 Seal):</strong> A cryptographic signature authenticates the sender, recipient, sequence, and ciphertext. Any tampering or packet alteration in transit results in immediate rejection.</li>
+        </ul>
+      </div>
+
+      <!-- 3. Secure Transport -->
+      <div class="p-4 rounded-xl border border-slate-500/30 bg-slate-500/5 space-y-2">
+        <div class="flex items-center gap-2">
+          <span class="badge badge-sm bg-slate-600 text-white font-bold border-none">Step 6</span>
+          <h3 class="font-bold text-sm text-slate-900 dark:text-slate-200">Zero-Knowledge Transport</h3>
+        </div>
+        <p class="text-xs opacity-85 leading-relaxed">
+          The locked ciphertext is routed to the server through secure HTTPS tunnels. The server stores only ciphertext blobs and initialization vectors—it possesses neither the private keys nor the algorithms to unlock the data.
+        </p>
+      </div>
+    </div>
+
+    <div class="flex justify-end mt-5 pt-3 border-t border-base-300">
+      <button class="btn btn-primary btn-sm px-6" (click)="showEncryptionModal.set(false)" type="button">
+        I Understand
+      </button>
+    </div>
+  </div>
+</div>
+}
+
+}
+

@@ -35,9 +35,14 @@ export class AccountService {
     );
   }
 
-  setCurrentUser(user: User) {
-    localStorage.setItem('user', JSON.stringify(user));
-    this.currentUser.set(user);
+  setCurrentUser(user: User | null) {
+    if (user && user.username && typeof user.username === 'string' && user.username.trim() && user.token) {
+      localStorage.setItem('user', JSON.stringify(user));
+      this.currentUser.set(user);
+    } else {
+      localStorage.removeItem('user');
+      this.currentUser.set(null);
+    }
   }
 
   logout() {
