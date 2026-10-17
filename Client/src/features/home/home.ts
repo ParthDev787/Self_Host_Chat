@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AccountService } from '../../core/services/account-service';
 import { ToastService } from '../../core/services/toast-service';
@@ -84,7 +84,6 @@ export class Home implements OnInit, OnDestroy {
   showEditProfile = signal(false);
   showLogsModal = signal(false);
   showConnectPopup = signal(false);
-  showEncryptionModal = signal(false);
   selectedMessageForInspection = signal<ChatMessage | null>(null);
   connectTab = signal<'share' | 'join'>('share');
   joinInput = signal('');
@@ -303,13 +302,17 @@ export class Home implements OnInit, OnDestroy {
           }
 
           const isCurrentlyActive = !!(active && active.username.toLowerCase() === c.username.toLowerCase());
+          const contactStatus = ((c.status || 'offline') as 'online' | 'offline');
+          const lastSeenText = c.lastSeen || (contactStatus === 'online' ? 'Online' : 'Offline');
 
           contactList.push({
             id: c.username,
             username: c.username,
             avatarLetter: c.username.charAt(0).toUpperCase(),
             avatarColor: getAvatarColor(c.username),
-            status: 'online',
+            status: contactStatus,
+            lastSeen: lastSeenText,
+            lastSeenTime: c.lastSeenTime,
             lastMessage: previewText,
             lastMessageTime: c.lastMessageTime || 'now',
             unreadCount: isCurrentlyActive ? 0 : (c.unreadCount || 0),
@@ -322,8 +325,17 @@ export class Home implements OnInit, OnDestroy {
 
         this.contacts.set(contactList);
 
-        // Update selected contact
+        // Update selected contact with live presence & last seen status
         if (active) {
+          const fresh = contactList.find(c => c.username.toLowerCase() === active.username.toLowerCase());
+          if (fresh) {
+            this.selectedContact.update(curr => curr ? {
+              ...curr,
+              status: fresh.status,
+              lastSeen: fresh.lastSeen,
+              lastSeenTime: fresh.lastSeenTime,
+            } : null);
+          }
           this.loadChatMessages(currentUsername, active.username);
         }
       },
@@ -486,7 +498,25 @@ export class Home implements OnInit, OnDestroy {
     });
   }
 
+  @HostListener('window:beforeunload')
+  onBeforeUnload() {
+    const current = this.accountService.currentUser();
+    if (current?.username) {
+      try {
+        const payload = JSON.stringify({ username: current.username });
+        navigator.sendBeacon('/api/connections/presence/offline', new Blob([payload], { type: 'application/json' }));
+      } catch {}
+    }
+  }
+
   logout() {
+    const current = this.accountService.currentUser();
+    if (current?.username) {
+      this.connectionService.setOffline(current.username).subscribe({
+        next: () => {},
+        error: () => {}
+      });
+    }
     this.accountService.logout();
     this.selectedContact.set(null);
     this.closeDropdowns();
@@ -567,11 +597,6 @@ export class Home implements OnInit, OnDestroy {
     } catch (err: any) {
       this.toastService.error(err.message || 'Encryption error');
     }
-  }
-
-  openEncryptionInfo() {
-    this.showProfileMenu.set(false);
-    this.showEncryptionModal.set(true);
   }
 
   // ── Dropdown Toggles ──────────────────────

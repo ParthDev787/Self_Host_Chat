@@ -51,3 +51,16 @@ npm install
 npm start
 ```
 *Runs on `http://localhost:4200`.*
+
+---
+
+## Security & End-to-End Encryption (Signal Protocol)
+
+All private messages and media in this application are end-to-end encrypted following the Signal Protocol (Zero-Knowledge Architecture):
+* **Key Exchange:** ECDH P-256 (X3DH)
+* **Key Derivation:** Double Ratchet per-message HKDF-SHA256
+* **Cipher:** AES-256-CBC with cryptographically random 16-byte IVs
+* **Integrity:** HMAC-SHA256 signature seals
+
+For the complete technical breakdown, sequence diagrams, and mathematical specifications, see:
+📄 **[SECURITY_AND_ENCRYPTION.md](SECURITY_AND_ENCRYPTION.md)**

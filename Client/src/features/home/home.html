@@ -142,22 +142,8 @@
             </svg>
             Edit Profile
           </div>
-          <div class="profile-menu-item" (click)="openLogsModal()">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-              stroke="currentColor" class="w-5 h-5">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-            </svg>
-            Request Logs (7 Days)
-          </div>
-          <div class="profile-menu-item" (click)="openEncryptionInfo()">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-              stroke="currentColor" class="w-5 h-5 text-emerald-500">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
-            </svg>
-            Security & Encryption Policy
-          </div>
+
+
           <div class="profile-menu-item text-error" (click)="logout()">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
               stroke="currentColor" class="w-5 h-5">
@@ -286,7 +272,9 @@
         (click)="selectContact(contact)">
         <div class="relative">
           <div class="avatar-circle" [style.background]="contact.avatarColor">{{ contact.avatarLetter }}</div>
-          <div class="status-dot status-online"></div>
+          @if (contact.status === 'online') {
+            <div class="status-dot status-online" title="Online"></div>
+          }
         </div>
         <div class="flex-1 min-w-0">
           <div class="flex justify-between items-center">
@@ -361,22 +349,25 @@
         <div class="avatar-circle" [style.background]="selectedContact()!.avatarColor">
           {{ selectedContact()!.avatarLetter }}
         </div>
-        <div class="status-dot status-online"></div>
+        @if (selectedContact()!.status === 'online') {
+          <div class="status-dot status-online" title="Online"></div>
+        }
       </div>
-      <div class="flex-1">
-        <h3 class="font-bold text-base">{{ selectedContact()!.username }}</h3>
-        <p class="text-xs text-success font-medium">Online</p>
+      <div class="flex-1 min-w-0">
+        <h3 class="font-bold text-base truncate">{{ selectedContact()!.username }}</h3>
+        @if (selectedContact()!.status === 'online') {
+          <p class="text-xs text-success font-medium flex items-center gap-1.5">
+            <span class="inline-block w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
+            Online
+          </p>
+        } @else {
+          <p class="text-xs opacity-60 font-medium">
+            {{ selectedContact()!.lastSeen || 'Offline' }}
+          </p>
+        }
       </div>
 
-      <!-- E2EE Security Badge -->
-      <button (click)="openEncryptionInfo()" type="button"
-        class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all font-medium cursor-pointer"
-        title="Messages are end-to-end encrypted with Signal Protocol. Click to inspect cryptographic security.">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5">
-          <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clip-rule="evenodd" />
-        </svg>
-        <span>End-to-End Encrypted</span>
-      </button>
+
     </div>
 
     <!-- Live Messages Stream -->
@@ -722,89 +713,7 @@
 </div>
 }
 
-<!-- ── Security & Encryption Policy Modal ── -->
-@if (showEncryptionModal()) {
-<div class="modal-overlay" (click)="showEncryptionModal.set(false)">
-  <div class="modal-card bg-base-100 text-base-content max-w-2xl w-full p-6 shadow-2xl rounded-2xl border border-base-300" (click)="$event.stopPropagation()">
-    <div class="flex justify-between items-center pb-4 border-b border-base-300 mb-5">
-      <div class="flex items-center gap-3">
-        <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-            <path fill-rule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clip-rule="evenodd" />
-          </svg>
-        </div>
-        <div>
-          <h2 class="text-lg font-bold">Security & Encryption Policy</h2>
-          <p class="text-xs opacity-60">End-to-End Encryption Specifications (Signal Protocol)</p>
-        </div>
-      </div>
-      <button (click)="showEncryptionModal.set(false)" type="button" class="btn btn-ghost btn-sm btn-circle">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-        </svg>
-      </button>
-    </div>
 
-    <!-- Policy Overview Banner -->
-    <div class="p-3.5 mb-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-3">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5">
-        <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clip-rule="evenodd" />
-      </svg>
-      <div class="text-xs">
-        <p class="font-bold text-emerald-800 dark:text-emerald-300 mb-0.5">Zero-Knowledge Architecture</p>
-        <p class="text-emerald-700/80 dark:text-emerald-400/80 leading-relaxed">
-          All messages are cryptographically sealed and scrambled on your device prior to transmission. The backend server acts solely as a blind transport relay and cannot decrypt or read your conversations.
-        </p>
-      </div>
-    </div>
-
-    <!-- Protocol Architecture Stages -->
-    <div class="space-y-3.5 max-h-[380px] overflow-y-auto pr-1">
-      <!-- 1. Key Setup & Double Ratchet -->
-      <div class="p-4 rounded-xl border border-purple-500/30 bg-purple-500/5 space-y-2">
-        <div class="flex items-center gap-2">
-          <span class="badge badge-sm bg-purple-600 text-white font-bold border-none">Steps 1–3</span>
-          <h3 class="font-bold text-sm text-purple-900 dark:text-purple-200">Key Setup & Double Ratchet</h3>
-        </div>
-        <ul class="text-xs space-y-1.5 opacity-85 leading-relaxed list-disc list-inside">
-          <li><strong>Step 1 (Key Generation):</strong> Each device generates an ECDH P-256 Identity Key Pair. The public key is published to the directory; the private key remains secure on the user's device.</li>
-          <li><strong>Step 2 (X3DH Agreement):</strong> Devices mutually compute a shared master secret locally without ever transmitting it over the network.</li>
-          <li><strong>Step 3 (Double Ratchet):</strong> Derives brand new ephemeral keys for every individual message via HKDF-SHA256, guaranteeing Perfect Forward Secrecy (PFS) and break-in recovery.</li>
-        </ul>
-      </div>
-
-      <!-- 2. Message Protection -->
-      <div class="p-4 rounded-xl border border-teal-500/30 bg-teal-500/5 space-y-2">
-        <div class="flex items-center gap-2">
-          <span class="badge badge-sm bg-teal-600 text-white font-bold border-none">Steps 4–5</span>
-          <h3 class="font-bold text-sm text-teal-900 dark:text-teal-200">Message Protection (AES-256 & HMAC)</h3>
-        </div>
-        <ul class="text-xs space-y-1.5 opacity-85 leading-relaxed list-disc list-inside">
-          <li><strong>Step 4 (AES-256-CBC):</strong> The message text is scrambled using symmetric 256-bit encryption with a unique, cryptographically random 16-byte IV.</li>
-          <li><strong>Step 5 (HMAC-SHA256 Seal):</strong> A cryptographic signature authenticates the sender, recipient, sequence, and ciphertext. Any tampering or packet alteration in transit results in immediate rejection.</li>
-        </ul>
-      </div>
-
-      <!-- 3. Secure Transport -->
-      <div class="p-4 rounded-xl border border-slate-500/30 bg-slate-500/5 space-y-2">
-        <div class="flex items-center gap-2">
-          <span class="badge badge-sm bg-slate-600 text-white font-bold border-none">Step 6</span>
-          <h3 class="font-bold text-sm text-slate-900 dark:text-slate-200">Zero-Knowledge Transport</h3>
-        </div>
-        <p class="text-xs opacity-85 leading-relaxed">
-          The locked ciphertext is routed to the server through secure HTTPS tunnels. The server stores only ciphertext blobs and initialization vectors—it possesses neither the private keys nor the algorithms to unlock the data.
-        </p>
-      </div>
-    </div>
-
-    <div class="flex justify-end mt-5 pt-3 border-t border-base-300">
-      <button class="btn btn-primary btn-sm px-6" (click)="showEncryptionModal.set(false)" type="button">
-        I Understand
-      </button>
-    </div>
-  </div>
-</div>
-}
 
 }
 

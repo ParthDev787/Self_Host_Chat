@@ -101,4 +101,18 @@ export class ConnectionService {
       { user, withUser }
     );
   }
+
+  heartbeat(username: string) {
+    return this.http.post<{ success: boolean; isOnline: boolean }>(
+      this.baseUrl + 'connections/heartbeat',
+      { username }
+    );
+  }
+
+  setOffline(username: string) {
+    return this.http.post<{ success: boolean; isOnline: boolean }>(
+      this.baseUrl + 'connections/presence/offline',
+      { username }
+    );
+  }
 }

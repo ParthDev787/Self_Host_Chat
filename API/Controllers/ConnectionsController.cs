@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using API.Data;
 using API.Entities;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,8 @@ namespace API.Controllers;
 [Route("api/connections")]
 public class ConnectionsController(DataContext context) : ControllerBase
 {
+    private static readonly ConcurrentDictionary<string, DateTime> _presenceMap = new(StringComparer.OrdinalIgnoreCase);
+
     public record RequestDto(string FromUsername, string ToUsername, string? Message);
     public record SendMessageDto(
         string Sender, 
@@ -22,6 +25,7 @@ public class ConnectionsController(DataContext context) : ControllerBase
     );
     public record PublicKeyDto(string Username, string PublicKeyJwk, string? PreKeyJwk);
     public record MarkReadDto(string User, string WithUser);
+    public record HeartbeatDto(string Username);
 
     [HttpPost("request")]
     public async Task<IActionResult> SendRequest([FromBody] RequestDto dto)
@@ -211,6 +215,7 @@ public class ConnectionsController(DataContext context) : ControllerBase
                 return BadRequest(new { error = "Username is required" });
 
             var user = username.Trim().ToLower();
+            _presenceMap[user] = DateTime.UtcNow;
 
             var conns = await context.UserConnections
                 .Where(c => c.User1 == user || c.User2 == user)
@@ -240,10 +245,16 @@ public class ConnectionsController(DataContext context) : ControllerBase
                     msgTime = dt.ToLocalTime().ToString("t");
                 }
 
+                // Real-time presence detection: active within last 5 seconds
+                bool isOnline = _presenceMap.TryGetValue(name, out var lastSeenUtc) 
+                    && (DateTime.UtcNow - lastSeenUtc) < TimeSpan.FromSeconds(5);
+
                 contactList.Add(new
                 {
                     username = name,
-                    status = "online",
+                    status = isOnline ? "online" : "offline",
+                    lastSeen = isOnline ? "Online" : FormatLastSeen(lastSeenUtc),
+                    lastSeenTime = lastSeenUtc != DateTime.MinValue ? lastSeenUtc.ToString("o") : null,
                     lastMessage = lastMsg?.Text ?? "Connected! Say hi 👋",
                     lastMessageObj = lastMsg,
                     lastMessageTime = msgTime,
@@ -415,5 +426,44 @@ public class ConnectionsController(DataContext context) : ControllerBase
         {
             return StatusCode(500, new { error = ex.Message });
         }
+    }
+
+    [HttpPost("heartbeat")]
+    public IActionResult Heartbeat([FromBody] HeartbeatDto dto)
+    {
+        if (!string.IsNullOrWhiteSpace(dto.Username))
+        {
+            _presenceMap[dto.Username.Trim().ToLower()] = DateTime.UtcNow;
+        }
+        return Ok(new { success = true, isOnline = true, timestamp = DateTime.UtcNow });
+    }
+
+    [HttpPost("presence/offline")]
+    public IActionResult SetOffline([FromBody] HeartbeatDto dto)
+    {
+        if (!string.IsNullOrWhiteSpace(dto.Username))
+        {
+            _presenceMap.TryRemove(dto.Username.Trim().ToLower(), out _);
+        }
+        return Ok(new { success = true, isOnline = false });
+    }
+
+    private static string FormatLastSeen(DateTime lastSeenUtc)
+    {
+        if (lastSeenUtc == DateTime.MinValue)
+            return "Offline";
+
+        var diff = DateTime.UtcNow - lastSeenUtc;
+        if (diff.TotalSeconds < 7)
+            return "Online";
+        if (diff.TotalMinutes < 1)
+            return "Last seen just now";
+        if (diff.TotalMinutes < 60)
+            return $"Last seen {(int)diff.TotalMinutes}m ago";
+        if (diff.TotalHours < 24)
+            return $"Last seen at {lastSeenUtc.ToLocalTime():t}";
+        if (diff.TotalDays < 2)
+            return $"Last seen yesterday at {lastSeenUtc.ToLocalTime():t}";
+        return $"Last seen on {lastSeenUtc.ToLocalTime():MMM d}";
     }
 }

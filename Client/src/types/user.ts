@@ -39,6 +39,8 @@ export interface Contact {
     avatarLetter: string;
     avatarColor: string;
     status: 'online' | 'offline' | 'away';
+    lastSeen?: string;
+    lastSeenTime?: string;
     lastMessage: string;
     lastMessageTime: string;
     unreadCount: number;
