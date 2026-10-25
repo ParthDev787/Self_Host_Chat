@@ -12,18 +12,20 @@ export class App implements OnInit {
   private accountService = inject(AccountService);
 
   ngOnInit(): void {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
+    try {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    } catch {}
     this.setCurrentUser();
   }
 
   setCurrentUser() {
     const userString = localStorage.getItem('user');
     if (!userString || userString === 'null' || userString === 'undefined') {
-      localStorage.removeItem('user');
       this.accountService.currentUser.set(null);
       return;
     }
+
     try {
       const user = JSON.parse(userString);
       if (!user || typeof user !== 'object' || !user.username || typeof user.username !== 'string' || !user.username.trim() || !user.token) {

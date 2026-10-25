@@ -2,7 +2,6 @@ import { Component, inject, signal, computed, OnInit, OnDestroy, ViewChild, Elem
 import { FormsModule } from '@angular/forms';
 import { AccountService } from '../../core/services/account-service';
 import { ToastService } from '../../core/services/toast-service';
-import { LoggerService } from '../../core/services/logger-service';
 import { ConnectionService } from '../../core/services/connection-service';
 import { CryptoService } from '../../core/services/crypto-service';
 import { Contact, ChatMessage, ConnectionRequest } from '../../types/user';
@@ -69,7 +68,6 @@ function formatDisplayTime(dateStr: string): string {
 export class Home implements OnInit, OnDestroy {
   protected accountService = inject(AccountService);
   private toastService = inject(ToastService);
-  protected loggerService = inject(LoggerService);
   private connectionService = inject(ConnectionService);
   protected cryptoService = inject(CryptoService);
 
@@ -82,7 +80,6 @@ export class Home implements OnInit, OnDestroy {
   selectedContact = signal<Contact | null>(null);
   showProfileMenu = signal(false);
   showEditProfile = signal(false);
-  showLogsModal = signal(false);
   showConnectPopup = signal(false);
   selectedMessageForInspection = signal<ChatMessage | null>(null);
   connectTab = signal<'share' | 'join'>('share');
@@ -92,6 +89,31 @@ export class Home implements OnInit, OnDestroy {
   messageText = signal('');
   searchText = signal('');
   connectionLink = signal('');
+
+  // ── Theme State in Profile Menu ───────────
+  showThemeMenu = signal(false);
+  currentTheme = signal<string>(typeof localStorage !== 'undefined' ? (localStorage.getItem('theme') || 'dark') : 'dark');
+  availableThemes = [
+    'dark', 'synthwave', 'dracula', 'night', 'luxury', 'forest', 'dim', 'coffee', 'black', 'sunset',
+    'light', 'nord', 'emerald', 'corporate', 'retro', 'cyberpunk', 'valentine', 'aqua', 'cupcake', 'winter', 'autumn', 'business'
+  ];
+
+  toggleThemeMenu(event?: MouseEvent) {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.showThemeMenu.update(v => !v);
+  }
+
+  changeTheme(theme: string) {
+    this.currentTheme.set(theme);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('theme', theme);
+    }
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  }
 
   // ── Smart Scroll to Unread State ──────────
   firstUnreadMessageId = signal<string | null>(null);
@@ -179,6 +201,12 @@ export class Home implements OnInit, OnDestroy {
   });
 
   ngOnInit() {
+    if (typeof localStorage !== 'undefined' && typeof document !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      this.currentTheme.set(savedTheme);
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+
     const user = this.accountService.currentUser();
     if (user?.username) {
       this.cryptoService.initializeIdentity(user.username);
@@ -232,7 +260,12 @@ export class Home implements OnInit, OnDestroy {
     // 1. Fetch live connection requests from Backend API
     this.connectionService.getRequests(currentUsername).subscribe({
       next: (reqs: any[]) => {
-        const myNotifications: ConnectionRequest[] = (reqs || []).map(r => {
+        const myNotifications: ConnectionRequest[] = (reqs || [])
+          .filter(r => {
+            const s = ((r.status || r.Status || 'pending') as string).toLowerCase();
+            return s !== 'accepted';
+          })
+          .map(r => {
           const fromUser = r.fromUsername || r.FromUsername || 'User';
           const toUser = r.toUsername || r.ToUsername || current.username;
           const status = ((r.status || r.Status || 'pending') as string).toLowerCase() as 'pending' | 'accepted' | 'rejected';
@@ -601,17 +634,24 @@ export class Home implements OnInit, OnDestroy {
 
   // ── Dropdown Toggles ──────────────────────
   toggleProfileMenu() {
-    this.showProfileMenu.update(v => !v);
+    this.showProfileMenu.update(v => {
+      if (v) {
+        this.showThemeMenu.set(false);
+      }
+      return !v;
+    });
     this.showNotifications.set(false);
   }
 
   toggleNotifications() {
     this.showNotifications.update(v => !v);
     this.showProfileMenu.set(false);
+    this.showThemeMenu.set(false);
   }
 
   closeDropdowns() {
     this.showProfileMenu.set(false);
+    this.showThemeMenu.set(false);
     this.showNotifications.set(false);
   }
 
@@ -621,15 +661,6 @@ export class Home implements OnInit, OnDestroy {
     this.showProfileMenu.set(false);
   }
 
-  openLogsModal() {
-    this.showLogsModal.set(true);
-    this.showProfileMenu.set(false);
-  }
-
-  downloadClientLogs() {
-    this.loggerService.downloadLogFile();
-    this.toastService.success('7-Day log file downloaded!');
-  }
 
   // ── Connect People ────────────────────────
   openConnectPopup() {
@@ -688,6 +719,7 @@ export class Home implements OnInit, OnDestroy {
   acceptRequest(req: ConnectionRequest) {
     this.connectionService.acceptRequest(req.id).subscribe({
       next: () => {
+        this.notifications.update(list => list.filter(n => n.id !== req.id));
         this.toastService.success(`You are now connected with ${req.fromUsername}! 🎉`);
         this.loadLiveData();
       },

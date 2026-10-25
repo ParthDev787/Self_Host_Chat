@@ -1,63 +1,67 @@
-using API.Data;
 using API.DTOs;
-using API.Entities;
 using API.Interface;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers;
 
-public class AccountController(DataContext context, ITokenService tokenService) : BaseApiController
+public class AccountController(IAccountService accountService) : BaseApiController
 {
-    private readonly PasswordHasher<AppUser> _passwordHasher = new();
-
     [HttpPost("register")]
     public async Task<ActionResult<UserDto>> Register(RegisterDto registerDto)
     {
-        if (await UserExists(registerDto.Username))
-            return BadRequest("Username is taken");
-
-        var user = new AppUser
-        {
-            UserName = registerDto.Username.ToLower(),
-            PasswordHash = string.Empty
-        };
-
-        user.PasswordHash = _passwordHasher.HashPassword(user, registerDto.Password);
-
-        context.Users.Add(user);
-        await context.SaveChangesAsync();
-
-        return new UserDto
-        {
-            Username = user.UserName,
-            Token = tokenService.CreateToken(user)
-        };
+        var (user, refreshToken) = await accountService.RegisterAsync(registerDto);
+        SetRefreshTokenCookie(refreshToken);
+        return Ok(user);
     }
 
     [HttpPost("login")]
     public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
     {
-        var user = await context.Users
-            .FirstOrDefaultAsync(x => x.UserName == loginDto.Username.ToLower());
-
-        if (user == null) return Unauthorized("Invalid username");
-
-        var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, loginDto.Password);
-
-        if (result == PasswordVerificationResult.Failed)
-            return Unauthorized("Invalid password");
-
-        return new UserDto
-        {
-            Username = user.UserName,
-            Token = tokenService.CreateToken(user)
-        };
+        var (user, refreshToken) = await accountService.LoginAsync(loginDto);
+        SetRefreshTokenCookie(refreshToken);
+        return Ok(user);
     }
 
-    private async Task<bool> UserExists(string username)
+    [HttpPost("refresh-token")]
+    public async Task<ActionResult<UserDto>> RefreshToken()
     {
-        return await context.Users.AnyAsync(x => x.UserName == username.ToLower());
+        var refreshToken = Request.Cookies["refreshToken"];
+        var (user, newRefreshToken) = await accountService.RefreshTokenAsync(refreshToken);
+        SetRefreshTokenCookie(newRefreshToken);
+        return Ok(user);
+    }
+
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        var refreshToken = Request.Cookies["refreshToken"];
+        await accountService.RevokeRefreshTokenAsync(refreshToken);
+        DeleteRefreshTokenCookie();
+        return Ok(new { message = "Logged out successfully" });
+    }
+
+    private void SetRefreshTokenCookie(string refreshToken)
+    {
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Expires = DateTime.UtcNow.AddDays(1),
+            SameSite = SameSiteMode.Lax,
+            Secure = Request.IsHttps,
+            IsEssential = true
+        };
+
+        Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+    }
+
+    private void DeleteRefreshTokenCookie()
+    {
+        Response.Cookies.Delete("refreshToken", new CookieOptions
+        {
+            HttpOnly = true,
+            SameSite = SameSiteMode.Lax,
+            Secure = Request.IsHttps,
+            IsEssential = true
+        });
     }
 }

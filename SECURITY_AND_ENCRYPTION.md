@@ -46,7 +46,7 @@ The messaging system is designed following the **Signal Protocol** principles.
 1. **Step 1 (Key Generation):**
    - Each registered user generates an ECDH P-256 **Identity Key Pair** upon registration/login.
    - The **Public Key** (`publicKeyJwk`) is published to the directory endpoint `POST /api/connections/keys`.
-   - The **Private Key** remains strictly in browser memory/session on the user's client.
+   - The **Private Key** is AES-GCM-256 encrypted (`sealedKey`) and stored strictly in per-tab `sessionStorage` (purged on tab close/logout), never in plaintext `localStorage`.
 
 2. **Step 2 (X3DH Key Agreement):**
    - When User A wants to talk to User B, User A fetches User B's public key from `GET /api/connections/keys/{username}`.

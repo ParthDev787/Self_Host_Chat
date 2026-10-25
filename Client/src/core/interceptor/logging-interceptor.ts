@@ -1,8 +1,20 @@
 import { HttpInterceptorFn, HttpResponse, HttpErrorResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
 import { tap } from 'rxjs';
-import { LoggerService } from '../services/logger-service';
 import { environment } from '../../environments/environment';
+
+// Auto-purge any legacy client logs or sensitive keys from localStorage
+if (typeof window !== 'undefined') {
+  try {
+    localStorage.removeItem('dating_app_client_logs');
+    localStorage.removeItem('dating_app_requests');
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k?.startsWith('signal_identity_')) {
+        localStorage.removeItem(k);
+      }
+    }
+  } catch {}
+}
 
 export function sendLog(level: string, message: string, correlationId?: string) {
   try {
@@ -32,7 +44,7 @@ export function sendLog(level: string, message: string, correlationId?: string) 
   } catch {}
 }
 
-// Global JS error listeners to capture unhandled client errors into frontend-.log
+// Global JS error listeners to capture unhandled client errors into frontend-.log file
 if (typeof window !== 'undefined' && !(window as any).__errorLogListenersRegistered) {
   (window as any).__errorLogListenersRegistered = true;
   window.addEventListener('error', (e) => sendLog('error', e.message));
@@ -40,7 +52,6 @@ if (typeof window !== 'undefined' && !(window as any).__errorLogListenersRegiste
 }
 
 export const loggingInterceptor: HttpInterceptorFn = (req, next) => {
-  const loggerService = inject(LoggerService);
   const startTime = performance.now();
   const url = req.urlWithParams || req.url;
 
@@ -61,21 +72,10 @@ export const loggingInterceptor: HttpInterceptorFn = (req, next) => {
         if (event instanceof HttpResponse) {
           const duration = Math.round(performance.now() - startTime);
 
-          // 2) Log response to server frontend-.log with correlation ID
+          // Log response to server Logs/frontend-.log file with correlation ID
           sendLog(
             'info',
             `${req.method} ${url} -> ${event.status} (${duration}ms)`,
-            correlationId
-          );
-
-          // Keep in local client storage for 7-day browser view/download
-          loggerService.logRequest(
-            req.method,
-            url,
-            event.status,
-            duration,
-            event.statusText,
-            '',
             correlationId
           );
         }
@@ -91,21 +91,10 @@ export const loggingInterceptor: HttpInterceptorFn = (req, next) => {
           errorMessage = String(error);
         }
 
-        // Log error to server frontend-.log with correlation ID
+        // Log error to server Logs/frontend-.log file with correlation ID
         sendLog(
           'error',
-          `${url} failed: ${errorMessage}`,
-          correlationId
-        );
-
-        // Keep in local client storage for 7-day browser view/download
-        loggerService.logRequest(
-          req.method,
-          url,
-          error.status || 0,
-          duration,
-          error.statusText || 'Error',
-          errorMessage,
+          `${url} failed: ${errorMessage} (${duration}ms)`,
           correlationId
         );
       },

@@ -25,21 +25,12 @@ public class RequestLoggingMiddleware
             var sw = Stopwatch.StartNew();
             _logger.LogInformation("REQUEST {Method} {Path}{Query}",
                 ctx.Request.Method, ctx.Request.Path, ctx.Request.QueryString);
-            try
-            {
-                await _next(ctx);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "UNHANDLED ERROR {Path}", ctx.Request.Path);
-                ctx.Response.StatusCode = 500;
-            }
-            finally
-            {
-                sw.Stop();
-                _logger.LogInformation("RESPONSE {Status} in {Ms} ms",
-                    ctx.Response.StatusCode, sw.ElapsedMilliseconds);
-            }
+
+            await _next(ctx);
+
+            sw.Stop();
+            _logger.LogInformation("RESPONSE {Status} in {Ms} ms",
+                ctx.Response.StatusCode, sw.ElapsedMilliseconds);
         }
     }
 }

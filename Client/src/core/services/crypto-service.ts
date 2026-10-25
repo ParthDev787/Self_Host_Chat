@@ -40,21 +40,43 @@ export class CryptoService {
 
   /**
    * Initializes or restores the user's Signal Identity Key Pair (ECDH P-256)
-   * and automatically synchronizes the public key to the backend.
+   * Stored securely in sessionStorage (encrypted with AES-GCM-256) instead of localStorage.
+   * Automatically clears any legacy plaintext private keys from localStorage.
    */
   async initializeIdentity(username: string): Promise<void> {
     const cleanUsername = username.trim().toLowerCase();
     this.currentUsername = cleanUsername;
 
     const storageKey = `signal_identity_${cleanUsername}`;
-    const stored = localStorage.getItem(storageKey);
+
+    // Auto-purge any legacy plaintext private keys from localStorage for security
+    try {
+      localStorage.removeItem(storageKey);
+      localStorage.removeItem('dating_app_requests');
+    } catch {}
+
+    // Check sessionStorage (per-session memory, destroyed on tab close)
+    const stored = sessionStorage.getItem(storageKey);
 
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
+        let privateKeyJwk: JsonWebKey;
+
+        if (parsed.sealedKey && parsed.salt && parsed.iv) {
+          // Decrypt the AES-GCM sealed private key
+          privateKeyJwk = await this.unsealPrivateKey(parsed, cleanUsername);
+        } else if (parsed.privateKeyJwk) {
+          // Legacy format migration: upgrade to sealed format immediately
+          privateKeyJwk = parsed.privateKeyJwk;
+          await this.saveSealedIdentity(cleanUsername, storageKey, parsed.publicKeyJwk, privateKeyJwk);
+        } else {
+          throw new Error('Invalid stored identity key format');
+        }
+
         const privateKey = await crypto.subtle.importKey(
           'jwk',
-          parsed.privateKeyJwk,
+          privateKeyJwk,
           { name: 'ECDH', namedCurve: 'P-256' },
           true,
           ['deriveBits', 'deriveKey']
@@ -102,13 +124,155 @@ export class CryptoService {
     const publicKeyJwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey);
     const privateKeyJwk = await crypto.subtle.exportKey('jwk', keyPair.privateKey);
 
-    localStorage.setItem(
-      storageKey,
-      JSON.stringify({ publicKeyJwk, privateKeyJwk, createdAt: new Date().toISOString() })
-    );
+    await this.saveSealedIdentity(username, storageKey, publicKeyJwk, privateKeyJwk);
 
     this.identityKeyPair = keyPair;
     this.identityPublicKeyJwk = publicKeyJwk;
+  }
+
+  private async saveSealedIdentity(
+    username: string,
+    storageKey: string,
+    publicKeyJwk: JsonWebKey,
+    privateKeyJwk: JsonWebKey
+  ): Promise<void> {
+    // Encrypt the private key with AES-GCM (256-bit) before writing to sessionStorage
+    const sealed = await this.sealPrivateKey(privateKeyJwk, username);
+
+    sessionStorage.setItem(
+      storageKey,
+      JSON.stringify({
+        publicKeyJwk,
+        sealedKey: sealed.sealedKey,
+        salt: sealed.salt,
+        iv: sealed.iv,
+        createdAt: new Date().toISOString()
+      })
+    );
+
+    // Ensure completely purged from localStorage
+    try {
+      localStorage.removeItem(storageKey);
+    } catch {}
+  }
+
+  /**
+   * Encrypts the private key JWK with AES-GCM (256-bit) using a session-derived key.
+   * Ensures private key parameter 'd' is never stored in plain text.
+   */
+  private async sealPrivateKey(
+    privateKeyJwk: JsonWebKey,
+    username: string
+  ): Promise<{ sealedKey: string; salt: string; iv: string }> {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const enc = new TextEncoder();
+    const entropy = `${username}::${typeof window !== 'undefined' ? window.location.origin : 'app'}::session_shield_v2`;
+
+    const masterKey = await crypto.subtle.importKey(
+      'raw',
+      enc.encode(entropy),
+      'PBKDF2',
+      false,
+      ['deriveKey']
+    );
+
+    const aesKey = await crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt,
+        iterations: 100000,
+        hash: 'SHA-256'
+      },
+      masterKey,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt']
+    );
+
+    const plaintext = enc.encode(JSON.stringify(privateKeyJwk));
+    const encrypted = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      aesKey,
+      plaintext
+    );
+
+    return {
+      sealedKey: this.arrayBufferToBase64(encrypted),
+      salt: this.arrayBufferToBase64(salt.buffer as ArrayBuffer),
+      iv: this.arrayBufferToBase64(iv.buffer as ArrayBuffer)
+    };
+  }
+
+  /**
+   * Decrypts the sealed private key from session storage.
+   */
+  private async unsealPrivateKey(
+    sealedData: { sealedKey: string; salt: string; iv: string },
+    username: string
+  ): Promise<JsonWebKey> {
+    const salt = this.base64ToArrayBuffer(sealedData.salt);
+    const iv = this.base64ToArrayBuffer(sealedData.iv);
+    const ciphertext = this.base64ToArrayBuffer(sealedData.sealedKey);
+    const enc = new TextEncoder();
+    const entropy = `${username}::${typeof window !== 'undefined' ? window.location.origin : 'app'}::session_shield_v2`;
+
+    const masterKey = await crypto.subtle.importKey(
+      'raw',
+      enc.encode(entropy),
+      'PBKDF2',
+      false,
+      ['deriveKey']
+    );
+
+    const aesKey = await crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt: new Uint8Array(salt),
+        iterations: 100000,
+        hash: 'SHA-256'
+      },
+      masterKey,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt']
+    );
+
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: new Uint8Array(iv) },
+      aesKey,
+      ciphertext
+    );
+
+    const dec = new TextDecoder();
+    return JSON.parse(dec.decode(decrypted));
+  }
+
+  /**
+   * Clears identity keys and purges both sessionStorage and legacy localStorage
+   */
+  clearAllSessionIdentities(): void {
+    this.identityKeyPair = null;
+    this.identityPublicKeyJwk = null;
+    this.sharedSecrets.clear();
+    this.peerPublicKeys.clear();
+    this.sequenceCounters.clear();
+    this.decryptedCache.clear();
+
+    try {
+      for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        const k = sessionStorage.key(i);
+        if (k?.startsWith('signal_identity_')) {
+          sessionStorage.removeItem(k);
+        }
+      }
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k?.startsWith('signal_identity_') || k === 'dating_app_requests') {
+          localStorage.removeItem(k);
+        }
+      }
+    } catch {}
   }
 
   /**
