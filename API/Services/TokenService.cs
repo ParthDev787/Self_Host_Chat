@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using API.Entities;
 using API.Interface;
@@ -9,16 +10,20 @@ namespace API.Services;
 
 public class TokenService(IConfiguration config) : ITokenService
 {
-    public string CreateToken(AppUser user)
+    public string CreateAccessToken(AppUser user)
     {
-        var tokenKey = config["TokenKey"] ?? throw new Exception("Cannot access tokenKey from appsettings");
-        if (tokenKey.Length < 64) throw new Exception("TokenKey needs to be at least 64 characters");
+        var tokenKey = config["TokenKey"] 
+            ?? throw new InvalidOperationException("Cannot access tokenKey from configuration");
+
+        if (tokenKey.Length < 64) 
+            throw new InvalidOperationException("TokenKey needs to be at least 64 characters");
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey));
 
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, user.UserName)
+            new(ClaimTypes.NameIdentifier, user.UserName),
+            new(ClaimTypes.Name, user.UserName)
         };
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
@@ -26,7 +31,7 @@ public class TokenService(IConfiguration config) : ITokenService
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddDays(7),
+            Expires = DateTime.UtcNow.AddMinutes(10), // 10 minutes access token
             SigningCredentials = creds
         };
 
@@ -34,5 +39,20 @@ public class TokenService(IConfiguration config) : ITokenService
         var token = tokenHandler.CreateToken(tokenDescriptor);
 
         return tokenHandler.WriteToken(token);
+    }
+
+    public RefreshToken CreateRefreshToken(string username)
+    {
+        var randomNumber = new byte[64];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+
+        return new RefreshToken
+        {
+            Username = username,
+            Token = Convert.ToBase64String(randomNumber),
+            ExpiresAt = DateTime.UtcNow.AddDays(1), // 1 day refresh token
+            CreatedAt = DateTime.UtcNow
+        };
     }
 }

@@ -17,34 +17,8 @@
             <a routerLink="/" routerLinkActive="text-accent" [routerLinkActiveOptions]="{exact: true}" class="hover:text-accent transition-colors">Home</a>
         </nav>
 
-        <!-- Right Side: Theme Switcher & Auth Section -->
+        <!-- Right Side: Auth Section (Login / User Profile) -->
         <div class="flex items-center ml-auto gap-3">
-            <!-- Theme Selector -->
-            <div class="dropdown dropdown-end">
-                <button tabindex="0" class="flex flex-col justify-center items-center text-white cursor-pointer uppercase text-xs hover:opacity-80 transition-opacity">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42" />
-                    </svg>
-                    <span class="text-[10px]">{{selectedTheme()}}</span>
-                </button>
-                <ul tabindex="0" class="dropdown-content z-50 menu bg-base-100 text-base-content rounded-box w-52 p-2 shadow-2xl max-h-72 overflow-y-auto overflow-x-hidden flex flex-col flex-nowrap">
-                    @for (theme of themes; track $index) {
-                    <li (click)="handleSelectTheme(theme)" class="w-full">
-                        <a class="capitalize flex justify-between items-center py-2 px-3 w-full" [class.active]="selectedTheme() === theme">
-                            <span>{{theme}}</span>
-                            @if (selectedTheme() === theme) {
-                                <svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                </svg>
-                            }
-                        </a>
-                    </li>
-                    }
-                </ul>
-            </div>
-
             <!-- Logged In User Dropdown -->
             @if (accountService.currentUser()) {
                 <div class="dropdown dropdown-end">
