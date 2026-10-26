@@ -26,5 +26,27 @@ public class DataContext(DbContextOptions<DataContext> options) : DbContext(opti
 
         modelBuilder.Entity<RefreshToken>()
             .HasIndex(r => r.Username);
+
+        modelBuilder.Entity<ChatMessageEntity>()
+            .HasIndex(m => new { m.Sender, m.Recipient });
+
+        modelBuilder.Entity<ChatMessageEntity>()
+            .HasIndex(m => new { m.Recipient, m.IsRead });
+
+        modelBuilder.Entity<ChatMessageEntity>()
+            .HasIndex(m => m.Timestamp);
+
+        modelBuilder.Entity<ConnectionRequest>()
+            .HasIndex(c => new { c.ToUsername, c.Status });
+
+        modelBuilder.Entity<ConnectionRequest>()
+            .HasIndex(c => c.FromUsername);
+
+        modelBuilder.Entity<UserConnection>()
+            .HasIndex(u => new { u.User1, u.User2 });
+
+        modelBuilder.Entity<UserPublicKey>()
+            .HasIndex(p => p.Username)
+            .IsUnique();
     }
 }

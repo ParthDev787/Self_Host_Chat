@@ -1,5 +1,1 @@
-export type AppError = {
-    message: string;
-    statusCode: number;
-    details?: string;
-}
+export * from './error';

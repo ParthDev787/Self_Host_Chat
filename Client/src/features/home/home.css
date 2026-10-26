@@ -235,6 +235,18 @@
   animation: dropIn 0.2s ease;
 }
 
+.profile-dropdown {
+  left: 0;
+  width: 290px;
+  max-width: calc(100vw - 24px);
+}
+
+.notif-dropdown {
+  right: -6px;
+  width: 315px;
+  max-width: calc(100vw - 32px);
+}
+
 @keyframes dropIn {
   from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
@@ -363,12 +375,107 @@
   background: rgba(128, 128, 128, 0.35);
 }
 
+.hidden {
+  display: none !important;
+}
+
 /* ============================================
-   RESPONSIVE
+   WHATSAPP-STYLE MOBILE RESPONSIVENESS
    ============================================ */
 @media (max-width: 768px) {
   .auth-card {
     margin: 16px;
     padding: 32px 24px;
+  }
+
+  /* Full screen panes on mobile */
+  .sidebar-pane {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    border-right: none !important;
+    display: flex !important;
+  }
+
+  .chat-pane {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+  }
+
+  /* When a chat contact is active, hide the contacts sidebar */
+  .sidebar-pane.has-active-chat {
+    display: none !important;
+  }
+
+  /* When no chat contact is active, hide the chat pane (shows contacts list) */
+  .chat-pane.no-active-chat {
+    display: none !important;
+  }
+
+  /* WhatsApp back arrow button visible on mobile */
+  .mobile-back-btn {
+    display: inline-flex !important;
+  }
+
+  .messages-container {
+    padding: 12px 10px;
+  }
+
+  .modal-card {
+    width: 95%;
+    max-width: 95%;
+    margin: 12px;
+    padding: 20px;
+  }
+
+  .chat-bubble {
+    max-width: 88%;
+    word-break: break-word;
+  }
+
+  .chat-header {
+    padding-left: 10px;
+    padding-right: 12px;
+  }
+
+  /* Center floating overlay dropdowns on mobile viewport */
+  .dropdown-panel {
+    position: fixed !important;
+    top: 68px !important;
+    left: 16px !important;
+    right: 16px !important;
+    width: auto !important;
+    max-width: calc(100vw - 32px) !important;
+    margin: 0 auto !important;
+    z-index: 50 !important;
+  }
+
+  .profile-dropdown,
+  .notif-dropdown {
+    left: 16px !important;
+    right: 16px !important;
+    width: auto !important;
+    max-width: calc(100vw - 32px) !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .sidebar-pane {
+    display: flex !important;
+    width: 360px !important;
+    min-width: 360px !important;
+    max-width: 360px !important;
+  }
+
+  .chat-pane {
+    display: flex !important;
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
+  }
+
+  .mobile-back-btn {
+    display: none !important;
   }
 }

@@ -73,10 +73,10 @@ export class ConnectionService {
       sender,
       recipient,
       text: cryptoPayload?.ciphertext || text,
-      ciphertext: cryptoPayload?.ciphertext || text,
-      iv: cryptoPayload?.iv,
-      mac: cryptoPayload?.mac,
-      ephemeralPublicKey: cryptoPayload?.ephemeralPublicKey,
+      ciphertext: cryptoPayload?.ciphertext || null,
+      iv: cryptoPayload?.iv || null,
+      mac: cryptoPayload?.mac || null,
+      ephemeralPublicKey: cryptoPayload?.ephemeralPublicKey || null,
       sequence: cryptoPayload?.sequence ?? 0
     });
   }

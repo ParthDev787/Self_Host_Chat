@@ -22,24 +22,34 @@
       <p class="text-white/50 mt-2 text-sm">Sign in to continue to Dating App</p>
     </div>
 
-    <form (ngSubmit)="login()" autocomplete="off" class="flex flex-col gap-4">
-      <div class="relative">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-          class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
-          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-        </svg>
-        <input class="auth-input" type="text" name="username"
-          [(ngModel)]="loginModel.username" placeholder="Username" required />
+    <form #loginForm="ngForm" (ngSubmit)="login()" autocomplete="off" class="flex flex-col gap-4">
+      <div>
+        <div class="relative">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+            class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
+            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+          </svg>
+          <input class="auth-input" type="text" name="username" #loginUname="ngModel"
+            [(ngModel)]="loginModel.username" placeholder="Username" required minlength="3" />
+        </div>
+        @if (loginUname.invalid && loginUname.touched) {
+          <span class="text-xs text-rose-300 ml-2 mt-1 block">Username is required (min 3 chars)</span>
+        }
       </div>
-      <div class="relative">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-          class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
-          <path fill-rule="evenodd"
-            d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-            clip-rule="evenodd" />
-        </svg>
-        <input class="auth-input" type="password" name="password"
-          [(ngModel)]="loginModel.password" placeholder="Password" required />
+      <div>
+        <div class="relative">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+            class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
+            <path fill-rule="evenodd"
+              d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+              clip-rule="evenodd" />
+          </svg>
+          <input class="auth-input" type="password" name="password" #loginPass="ngModel"
+            [(ngModel)]="loginModel.password" placeholder="Password" required minlength="4" />
+        </div>
+        @if (loginPass.invalid && loginPass.touched) {
+          <span class="text-xs text-rose-300 ml-2 mt-1 block">Password is required (min 4 chars)</span>
+        }
       </div>
       <button class="auth-btn mt-2" type="submit">Sign In</button>
     </form>
@@ -65,24 +75,34 @@
       <p class="text-white/50 mt-2 text-sm">Join and find your perfect match</p>
     </div>
 
-    <form (ngSubmit)="register()" autocomplete="off" class="flex flex-col gap-4">
-      <div class="relative">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-          class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
-          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-        </svg>
-        <input class="auth-input" type="text" name="reg-username"
-          [(ngModel)]="registerModel.username" placeholder="Choose a username" required />
+    <form #regForm="ngForm" (ngSubmit)="register()" autocomplete="off" class="flex flex-col gap-4">
+      <div>
+        <div class="relative">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+            class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
+            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+          </svg>
+          <input class="auth-input" type="text" name="reg-username" #regUname="ngModel"
+            [(ngModel)]="registerModel.username" placeholder="Choose a username" required minlength="3" />
+        </div>
+        @if (regUname.invalid && regUname.touched) {
+          <span class="text-xs text-rose-300 ml-2 mt-1 block">Username must be at least 3 characters</span>
+        }
       </div>
-      <div class="relative">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-          class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
-          <path fill-rule="evenodd"
-            d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-            clip-rule="evenodd" />
-        </svg>
-        <input class="auth-input" type="password" name="reg-password"
-          [(ngModel)]="registerModel.password" placeholder="Choose a password" required />
+      <div>
+        <div class="relative">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+            class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
+            <path fill-rule="evenodd"
+              d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+              clip-rule="evenodd" />
+          </svg>
+          <input class="auth-input" type="password" name="reg-password" #regPass="ngModel"
+            [(ngModel)]="registerModel.password" placeholder="Choose a password (min 4 chars)" required minlength="4" />
+        </div>
+        @if (regPass.invalid && regPass.touched) {
+          <span class="text-xs text-rose-300 ml-2 mt-1 block">Password must be at least 4 characters</span>
+        }
       </div>
       <button class="auth-btn mt-2" type="submit">Create Account</button>
     </form>
@@ -107,11 +127,12 @@
 
   <!-- Invisible backdrop to close dropdown menus when clicking outside -->
   @if (showProfileMenu() || showNotifications()) {
-    <div class="fixed inset-0 z-30" (click)="closeDropdowns()"></div>
+    <div class="fixed inset-0 z-40 bg-black/35 backdrop-blur-[1px]" (click)="closeDropdowns()"></div>
   }
 
-  <!-- ──── LEFT SIDEBAR ──── -->
-  <aside class="w-[360px] min-w-[360px] flex flex-col h-screen border-r border-base-300 bg-base-200">
+  <!-- ──── LEFT SIDEBAR (Contacts) ──── -->
+  <aside class="sidebar-pane flex flex-col h-screen border-r border-base-300 bg-base-200"
+    [class.has-active-chat]="selectedContact() !== null">
 
     <!-- Sidebar Header -->
     <div class="flex items-center gap-3 p-4 border-b border-base-300 shrink-0">
@@ -124,8 +145,7 @@
 
         <!-- Profile Dropdown -->
         @if (showProfileMenu()) {
-        <div class="dropdown-panel bg-base-100 text-base-content border border-base-300 shadow-2xl rounded-2xl overflow-hidden"
-          style="left: 0; min-width: 290px; max-width: 320px;">
+        <div class="dropdown-panel profile-dropdown bg-base-100 text-base-content border border-base-300 shadow-2xl rounded-2xl overflow-hidden">
           <!-- User info header -->
           <div class="p-3.5 border-b border-base-300 bg-base-200/50">
             <div class="flex items-center gap-3">
@@ -249,46 +269,59 @@
 
         <!-- Notifications Dropdown Panel -->
         @if (showNotifications()) {
-        <div class="dropdown-panel bg-base-100 text-base-content" style="right: 0; width: 350px;">
-          <div class="p-4 border-b border-base-300 flex items-center justify-between">
-            <h3 class="font-bold">Notifications</h3>
-            @if (unreadNotifCount() > 0) {
-              <span class="badge badge-primary badge-sm">{{ unreadNotifCount() }} pending</span>
-            } @else {
-              <span class="badge badge-ghost badge-sm">all clear</span>
-            }
+        <div class="dropdown-panel notif-dropdown bg-base-100 text-base-content border border-base-300 shadow-2xl rounded-2xl overflow-hidden z-50">
+          <div class="p-3.5 border-b border-base-300 flex items-center justify-between bg-base-200/50">
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-sm">Notifications</h3>
+              @if (unreadNotifCount() > 0) {
+                <span class="badge badge-primary badge-xs">{{ unreadNotifCount() }} pending</span>
+              } @else {
+                <span class="badge badge-ghost badge-xs opacity-60">all clear</span>
+              }
+            </div>
+            <button (click)="showNotifications.set(false)" type="button" class="btn btn-ghost btn-xs btn-circle opacity-60 hover:opacity-100" title="Close">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+              </svg>
+            </button>
           </div>
           <div class="max-h-80 overflow-y-auto">
             @for (req of notifications(); track req.id) {
-            <div class="notif-item border-b border-base-300/50" [class.bg-error/5]="req.isOutgoingRejection">
+            <div class="notif-item p-3 border-b border-base-300/50 flex items-start gap-3 hover:bg-base-200/50 transition-colors" [class.bg-error/5]="req.isOutgoingRejection">
               <div class="avatar-circle avatar-sm shrink-0" [style.background]="req.avatarColor">{{ req.avatarLetter }}</div>
               <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-1.5">
-                  <p class="font-semibold text-sm">{{ req.displayName || req.fromUsername }}</p>
+                <div class="flex items-center justify-between gap-1">
+                  <p class="font-semibold text-sm truncate">{{ req.displayName || req.fromUsername }}</p>
+                  <span class="text-[10px] opacity-50 shrink-0">{{ req.timestamp }}</span>
+                </div>
+                @if (req.isOutgoingRejection) {
+                  <span class="badge badge-xs badge-error text-white font-medium my-1">Rejected</span>
+                  <p class="text-xs text-error font-medium">Your join request was rejected</p>
+                } @else if (req.message) {
+                  <p class="text-xs bg-base-200 p-2 rounded-lg my-1 text-base-content/85 break-words font-medium">"{{ req.message }}"</p>
+                }
+                <div class="flex items-center gap-2 mt-2">
                   @if (req.isOutgoingRejection) {
-                    <span class="badge badge-xs badge-error text-white font-medium">Rejected</span>
+                    <button (click)="dismissNotification(req)" type="button" class="btn btn-xs btn-outline btn-error">Dismiss</button>
+                  } @else if (req.status === 'pending') {
+                    <button (click)="acceptRequest(req)" type="button" class="btn btn-xs btn-success text-white px-3 font-semibold">Accept</button>
+                    <button (click)="rejectRequest(req)" type="button" class="btn btn-xs btn-ghost text-error">Reject</button>
+                  } @else {
+                    <button (click)="dismissNotification(req)" type="button" class="btn btn-xs btn-ghost opacity-60">Dismiss</button>
                   }
                 </div>
-                <p class="text-xs opacity-50">{{ req.timestamp }}</p>
-                @if (req.isOutgoingRejection) {
-                  <p class="text-xs text-error font-medium mt-1">Your join request was rejected</p>
-                } @else if (req.message) {
-                  <p class="text-xs bg-base-200 p-1.5 rounded-lg mt-1 text-base-content/80 break-words font-medium">"{{ req.message }}"</p>
-                }
-              </div>
-              <div class="shrink-0 flex items-center gap-1">
-                @if (req.isOutgoingRejection) {
-                  <button (click)="dismissNotification(req)" type="button" class="btn btn-xs btn-outline btn-error">Dismiss</button>
-                } @else if (req.status === 'pending') {
-                  <button (click)="acceptRequest(req)" type="button" class="btn btn-xs btn-success text-white">Accept</button>
-                  <button (click)="rejectRequest(req)" type="button" class="btn btn-xs btn-ghost text-error">Reject</button>
-                } @else {
-                  <button (click)="dismissNotification(req)" type="button" class="btn btn-xs btn-ghost opacity-60">Dismiss</button>
-                }
               </div>
             </div>
             } @empty {
-            <div class="p-8 text-center opacity-40 text-sm">No connection requests yet</div>
+            <div class="py-8 px-4 text-center flex flex-col items-center justify-center gap-2 text-base-content/60">
+              <div class="w-10 h-10 rounded-full bg-base-200 flex items-center justify-center opacity-70 mb-1">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                </svg>
+              </div>
+              <p class="font-medium text-sm">No connection requests yet</p>
+              <p class="text-xs opacity-70">When someone sends you a connection request, you'll see it here.</p>
+            </div>
             }
           </div>
         </div>
@@ -402,12 +435,22 @@
     </div>
   </aside>
 
-  <section class="flex-1 flex flex-col h-screen bg-base-100 relative">
+  <!-- ──── RIGHT CHAT PANE ──── -->
+  <section class="chat-pane flex flex-col h-screen bg-base-100 relative"
+    [class.no-active-chat]="selectedContact() === null">
 
     @if (selectedContact()) {
 
     <!-- Chat Header -->
-    <div class="flex items-center gap-3 px-6 py-3.5 border-b border-base-300 bg-base-100 shrink-0 shadow-sm">
+    <div class="flex items-center gap-2 md:gap-3 px-3 md:px-6 py-3 border-b border-base-300 bg-base-100 shrink-0 shadow-xs chat-header">
+      <!-- WhatsApp Mobile Back Button -->
+      <button (click)="selectedContact.set(null)" type="button"
+        class="mobile-back-btn p-1.5 -ml-1 rounded-full hover:bg-base-200 active:scale-95 transition-all cursor-pointer text-base-content"
+        title="Back to contacts" aria-label="Back to contacts">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+        </svg>
+      </button>
       <div class="relative">
         <div class="avatar-circle" [style.background]="selectedContact()!.avatarColor">
           {{ selectedContact()!.avatarLetter }}
