@@ -166,7 +166,7 @@ public class ConnectionService(
             }
 
             bool isOnline = _presenceMap.TryGetValue(name, out var lastSeenUtc)
-                && (DateTime.UtcNow - lastSeenUtc) < TimeSpan.FromSeconds(5);
+                && (DateTime.UtcNow - lastSeenUtc) < TimeSpan.FromSeconds(15);
 
             contactList.Add(new
             {
@@ -204,19 +204,20 @@ public class ConnectionService(
         if (string.IsNullOrWhiteSpace(dto.Sender) || string.IsNullOrWhiteSpace(dto.Recipient))
             throw new BadRequestException("Sender and Recipient are required");
 
-        var content = dto.Ciphertext ?? dto.Text;
+        var isEncrypted = !string.IsNullOrWhiteSpace(dto.Ciphertext) && !string.IsNullOrWhiteSpace(dto.Iv);
+        var content = isEncrypted ? dto.Ciphertext! : (dto.Text ?? dto.Ciphertext);
         if (string.IsNullOrWhiteSpace(content))
-            throw new BadRequestException("Ciphertext or Text is required");
+            throw new BadRequestException("Message text or ciphertext is required");
 
         var msg = new ChatMessageEntity
         {
             Sender = dto.Sender.Trim().ToLower(),
             Recipient = dto.Recipient.Trim().ToLower(),
             Text = content.Trim(),
-            Ciphertext = dto.Ciphertext?.Trim() ?? content.Trim(),
-            Iv = dto.Iv?.Trim(),
-            Mac = dto.Mac?.Trim(),
-            EphemeralPublicKey = dto.EphemeralPublicKey?.Trim(),
+            Ciphertext = isEncrypted ? dto.Ciphertext!.Trim() : null,
+            Iv = isEncrypted ? dto.Iv?.Trim() : null,
+            Mac = isEncrypted ? dto.Mac?.Trim() : null,
+            EphemeralPublicKey = isEncrypted ? dto.EphemeralPublicKey?.Trim() : null,
             Sequence = dto.Sequence,
             IsDelivered = true,
             IsRead = false,
@@ -301,7 +302,7 @@ public class ConnectionService(
             return "Offline";
 
         var diff = DateTime.UtcNow - lastSeenUtc;
-        if (diff.TotalSeconds < 7)
+        if (diff.TotalSeconds < 15)
             return "Online";
         if (diff.TotalMinutes < 1)
             return "Last seen just now";

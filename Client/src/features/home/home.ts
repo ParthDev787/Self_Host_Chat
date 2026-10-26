@@ -5,6 +5,7 @@ import { ToastService } from '../../core/services/toast-service';
 import { ConnectionService } from '../../core/services/connection-service';
 import { CryptoService } from '../../core/services/crypto-service';
 import { Contact, ChatMessage, ConnectionRequest } from '../../types/user';
+import { environment } from '../../environments/environment';
 
 function getAvatarColor(username: string): string {
   const colors = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#14b8a6', '#f43f5e'];
@@ -41,7 +42,7 @@ export function extractTargetUsername(raw: string): string {
     const url = new URL(testUrl);
     const j = url.searchParams.get('join') || url.searchParams.get('user');
     if (j) return j.trim();
-  } catch {}
+  } catch { }
 
   // Strip leading/trailing slashes or queries
   str = str.replace(/^[/#?]+/, '').replace(/[/#?]+$/, '');
@@ -137,7 +138,7 @@ export class Home implements OnInit, OnDestroy {
           const el = this.messagesContainer.nativeElement;
           el.scrollTop = el.scrollHeight;
         }
-      } catch {}
+      } catch { }
     }, 60);
   }
 
@@ -145,8 +146,8 @@ export class Home implements OnInit, OnDestroy {
     setTimeout(() => {
       try {
         const dividerEl = document.getElementById('unread-divider');
-        const firstMsgEl = this.firstUnreadMessageId() 
-          ? document.getElementById('msg-' + this.firstUnreadMessageId()) 
+        const firstMsgEl = this.firstUnreadMessageId()
+          ? document.getElementById('msg-' + this.firstUnreadMessageId())
           : null;
         const targetEl = dividerEl || firstMsgEl;
 
@@ -215,10 +216,10 @@ export class Home implements OnInit, OnDestroy {
     this.checkUrlJoinParam();
     this.loadLiveData();
 
-    // Heartbeat every 1.5 seconds to refresh requests, contacts and active chat from the API
+    // Live data polling every 4 seconds to refresh requests, contacts and active chat from the API
     this.intervalId = setInterval(() => {
       this.loadLiveData();
-    }, 1500);
+    }, 4000);
   }
 
   ngOnDestroy() {
@@ -257,6 +258,12 @@ export class Home implements OnInit, OnDestroy {
     const current = this.accountService.currentUser()!;
     const currentUsername = current.username.toLowerCase();
 
+    // 0. Explicit presence heartbeat
+    this.connectionService.heartbeat(currentUsername).subscribe({
+      next: () => { },
+      error: () => { }
+    });
+
     // 1. Fetch live connection requests from Backend API
     this.connectionService.getRequests(currentUsername).subscribe({
       next: (reqs: any[]) => {
@@ -266,27 +273,27 @@ export class Home implements OnInit, OnDestroy {
             return s !== 'accepted';
           })
           .map(r => {
-          const fromUser = r.fromUsername || r.FromUsername || 'User';
-          const toUser = r.toUsername || r.ToUsername || current.username;
-          const status = ((r.status || r.Status || 'pending') as string).toLowerCase() as 'pending' | 'accepted' | 'rejected';
-          const rawTime = r.timestamp || r.Timestamp;
-          const isOutgoingRejection = fromUser.toLowerCase() === currentUsername && status === 'rejected';
-          const displayName = isOutgoingRejection ? toUser : fromUser;
+            const fromUser = r.fromUsername || r.FromUsername || 'User';
+            const toUser = r.toUsername || r.ToUsername || current.username;
+            const status = ((r.status || r.Status || 'pending') as string).toLowerCase() as 'pending' | 'accepted' | 'rejected';
+            const rawTime = r.timestamp || r.Timestamp;
+            const isOutgoingRejection = fromUser.toLowerCase() === currentUsername && status === 'rejected';
+            const displayName = isOutgoingRejection ? toUser : fromUser;
 
-          return {
-            id: r.id || r.Id || Date.now().toString(),
-            fromUsername: fromUser,
-            toUsername: toUser,
-            message: isOutgoingRejection ? 'Your join request was rejected' : (r.message || r.Message || ''),
-            avatarLetter: displayName.charAt(0).toUpperCase(),
-            avatarColor: getAvatarColor(displayName),
-            timestamp: formatDisplayTime(rawTime),
-            displayTime: formatDisplayTime(rawTime),
-            status: status,
-            isOutgoingRejection: isOutgoingRejection,
-            displayName: displayName,
-          };
-        });
+            return {
+              id: r.id || r.Id || Date.now().toString(),
+              fromUsername: fromUser,
+              toUsername: toUser,
+              message: isOutgoingRejection ? 'Your join request was rejected' : (r.message || r.Message || ''),
+              avatarLetter: displayName.charAt(0).toUpperCase(),
+              avatarColor: getAvatarColor(displayName),
+              timestamp: formatDisplayTime(rawTime),
+              displayTime: formatDisplayTime(rawTime),
+              status: status,
+              isOutgoingRejection: isOutgoingRejection,
+              displayName: displayName,
+            };
+          });
 
         this.notifications.set(myNotifications);
 
@@ -372,7 +379,7 @@ export class Home implements OnInit, OnDestroy {
           this.loadChatMessages(currentUsername, active.username);
         }
       },
-      error: () => {}
+      error: () => { }
     });
   }
 
@@ -456,7 +463,7 @@ export class Home implements OnInit, OnDestroy {
                     c.username.toLowerCase() === contactUsername.toLowerCase() ? { ...c, unreadCount: 0 } : c
                   ));
                 },
-                error: () => {}
+                error: () => { }
               });
             } else {
               // No unread messages: smooth scroll directly to bottom
@@ -479,7 +486,7 @@ export class Home implements OnInit, OnDestroy {
                     c.username.toLowerCase() === contactUsername.toLowerCase() ? { ...c, unreadCount: 0 } : c
                   ));
                 },
-                error: () => {}
+                error: () => { }
               });
             }
 
@@ -492,21 +499,31 @@ export class Home implements OnInit, OnDestroy {
           }
         }
       },
-      error: () => {}
+      error: () => { }
     });
   }
 
   // ── Auth Methods ──────────────────────────
   login() {
-    if (!this.loginModel.username || !this.loginModel.password) {
+    const uname = this.loginModel.username?.trim();
+    const pass = this.loginModel.password;
+    if (!uname || !pass) {
       this.toastService.warning('Please enter both username and password');
       return;
     }
-    const uname = this.loginModel.username.trim().toLowerCase();
-    this.accountService.login(this.loginModel).subscribe({
+    if (uname.length < 3) {
+      this.toastService.warning('Username must be at least 3 characters');
+      return;
+    }
+    if (pass.length < 4) {
+      this.toastService.warning('Password must be at least 4 characters');
+      return;
+    }
+    const cleanUname = uname.toLowerCase();
+    this.accountService.login({ username: cleanUname, password: pass }).subscribe({
       next: () => {
-        this.cryptoService.initializeIdentity(uname);
-        this.toastService.success(`Welcome back, ${uname}!`);
+        this.cryptoService.initializeIdentity(cleanUname);
+        this.toastService.success(`Welcome back, ${cleanUname}!`);
         this.loginModel = { username: '', password: '' };
         this.loadLiveData();
         this.checkUrlJoinParam();
@@ -515,15 +532,25 @@ export class Home implements OnInit, OnDestroy {
   }
 
   register() {
-    if (!this.registerModel.username || !this.registerModel.password) {
+    const uname = this.registerModel.username?.trim();
+    const pass = this.registerModel.password;
+    if (!uname || !pass) {
       this.toastService.warning('Please enter both username and password');
       return;
     }
-    const uname = this.registerModel.username.trim().toLowerCase();
-    this.accountService.register(this.registerModel).subscribe({
+    if (uname.length < 3) {
+      this.toastService.warning('Username must be at least 3 characters');
+      return;
+    }
+    if (pass.length < 4) {
+      this.toastService.warning('Password must be at least 4 characters');
+      return;
+    }
+    const cleanUname = uname.toLowerCase();
+    this.accountService.register({ username: cleanUname, password: pass }).subscribe({
       next: () => {
-        this.cryptoService.initializeIdentity(uname);
-        this.toastService.success(`Welcome ${uname}! Account created.`);
+        this.cryptoService.initializeIdentity(cleanUname);
+        this.toastService.success(`Welcome ${cleanUname}! Account created.`);
         this.registerModel = { username: '', password: '' };
         this.loadLiveData();
         this.checkUrlJoinParam();
@@ -537,8 +564,9 @@ export class Home implements OnInit, OnDestroy {
     if (current?.username) {
       try {
         const payload = JSON.stringify({ username: current.username });
-        navigator.sendBeacon('/api/connections/presence/offline', new Blob([payload], { type: 'application/json' }));
-      } catch {}
+        const url = `${environment.apiUrl}connections/presence/offline`;
+        navigator.sendBeacon(url, new Blob([payload], { type: 'application/json' }));
+      } catch { }
     }
   }
 
@@ -546,8 +574,8 @@ export class Home implements OnInit, OnDestroy {
     const current = this.accountService.currentUser();
     if (current?.username) {
       this.connectionService.setOffline(current.username).subscribe({
-        next: () => {},
-        error: () => {}
+        next: () => { },
+        error: () => { }
       });
     }
     this.accountService.logout();
@@ -573,8 +601,8 @@ export class Home implements OnInit, OnDestroy {
     const current = this.accountService.currentUser();
     if (current) {
       this.connectionService.markMessagesAsRead(current.username, contact.username).subscribe({
-        next: () => {},
-        error: () => {}
+        next: () => { },
+        error: () => { }
       });
       this.cryptoService.getPeerPublicKey(contact.username);
       this.loadChatMessages(current.username, contact.username);
@@ -597,9 +625,9 @@ export class Home implements OnInit, OnDestroy {
       }
 
       this.connectionService.sendMessage(
-        current.username, 
-        contact.username, 
-        text, 
+        current.username,
+        contact.username,
+        text,
         cryptoPayload
       ).subscribe({
         next: () => {
@@ -702,7 +730,7 @@ export class Home implements OnInit, OnDestroy {
     // Send to Backend API
     this.connectionService.sendRequest(current.username, target, this.joinMessage().trim()).subscribe({
       next: () => {
-        this.toastService.success(`Connection request sent to ${target}! 🚀`);
+        this.toastService.success(`Connection request sent to ${target}! `);
         this.showConnectPopup.set(false);
         this.joinInput.set('');
         this.joinMessage.set('');

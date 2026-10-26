@@ -64,6 +64,13 @@ public static class DbInitializer
                     );
                     CREATE INDEX IF NOT EXISTS IX_RefreshTokens_Token ON RefreshTokens (Token);
                     CREATE INDEX IF NOT EXISTS IX_RefreshTokens_Username ON RefreshTokens (Username);
+                    CREATE INDEX IF NOT EXISTS IX_ChatMessages_Sender_Recipient ON ChatMessages (Sender, Recipient);
+                    CREATE INDEX IF NOT EXISTS IX_ChatMessages_Recipient_IsRead ON ChatMessages (Recipient, IsRead);
+                    CREATE INDEX IF NOT EXISTS IX_ChatMessages_Timestamp ON ChatMessages (Timestamp);
+                    CREATE INDEX IF NOT EXISTS IX_ConnectionRequests_ToUsername_Status ON ConnectionRequests (ToUsername, Status);
+                    CREATE INDEX IF NOT EXISTS IX_ConnectionRequests_FromUsername ON ConnectionRequests (FromUsername);
+                    CREATE INDEX IF NOT EXISTS IX_UserConnections_User1_User2 ON UserConnections (User1, User2);
+                    CREATE INDEX IF NOT EXISTS IX_UserPublicKeys_Username ON UserPublicKeys (Username);
                 ";
                 await cmd.ExecuteNonQueryAsync();
 

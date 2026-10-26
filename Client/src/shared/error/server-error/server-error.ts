@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { AppError } from '../../../types/erro';
+import { AppError } from '../../../types/error';
 import { Router } from '@angular/router';
 
 @Component({
