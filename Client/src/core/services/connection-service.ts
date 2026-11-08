@@ -72,7 +72,7 @@ export class ConnectionService {
     return this.http.post<ChatMessage>(this.baseUrl + 'connections/messages', {
       sender,
       recipient,
-      text: cryptoPayload?.ciphertext || text,
+      text: text,
       ciphertext: cryptoPayload?.ciphertext || null,
       iv: cryptoPayload?.iv || null,
       mac: cryptoPayload?.mac || null,

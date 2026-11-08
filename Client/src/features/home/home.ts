@@ -4,6 +4,8 @@ import { AccountService } from '../../core/services/account-service';
 import { ToastService } from '../../core/services/toast-service';
 import { ConnectionService } from '../../core/services/connection-service';
 import { CryptoService } from '../../core/services/crypto-service';
+import { ReportService } from '../../core/services/report-service';
+import { SoundService } from '../../core/services/sound-service';
 import { Contact, ChatMessage, ConnectionRequest } from '../../types/user';
 import { environment } from '../../environments/environment';
 
@@ -71,6 +73,8 @@ export class Home implements OnInit, OnDestroy {
   private toastService = inject(ToastService);
   private connectionService = inject(ConnectionService);
   protected cryptoService = inject(CryptoService);
+  protected reportService = inject(ReportService);
+  protected soundService = inject(SoundService);
 
   // ── Auth state ────────────────────────────
   isLoginMode = signal(true);
@@ -110,6 +114,14 @@ export class Home implements OnInit, OnDestroy {
     this.currentTheme.set(theme);
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('theme', theme);
+      const user = this.accountService.currentUser();
+      if (user?.username) {
+        localStorage.setItem(`theme_${user.username.trim().toLowerCase()}`, theme);
+        this.accountService.updateTheme(user.username, theme).subscribe({
+          next: () => {},
+          error: () => {}
+        });
+      }
     }
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('data-theme', theme);
@@ -202,19 +214,26 @@ export class Home implements OnInit, OnDestroy {
   });
 
   ngOnInit() {
+    const user = this.accountService.currentUser();
+    const uname = user?.username ? user.username.trim().toLowerCase() : '';
+
     if (typeof localStorage !== 'undefined' && typeof document !== 'undefined') {
-      const savedTheme = localStorage.getItem('theme') || 'dark';
+      const userTheme = uname ? localStorage.getItem(`theme_${uname}`) : null;
+      const savedTheme = userTheme || localStorage.getItem('theme') || 'dark';
       this.currentTheme.set(savedTheme);
       document.documentElement.setAttribute('data-theme', savedTheme);
+      localStorage.setItem('theme', savedTheme);
     }
 
-    const user = this.accountService.currentUser();
     if (user?.username) {
-      this.cryptoService.initializeIdentity(user.username);
+      this.cryptoService.initializeIdentity(user.username).then(() => {
+        this.loadLiveData();
+      });
+    } else {
+      this.loadLiveData();
     }
 
     this.checkUrlJoinParam();
-    this.loadLiveData();
 
     // Live data polling every 4 seconds to refresh requests, contacts and active chat from the API
     this.intervalId = setInterval(() => {
@@ -303,6 +322,7 @@ export class Home implements OnInit, OnDestroy {
           if (latest.isOutgoingRejection) {
             this.toastService.warning(`⚠️ ${latest.displayName} rejected your connection request`);
           } else {
+            this.soundService.playNotificationSound();
             this.toastService.info(`🔔 New connection request from ${latest.fromUsername}!`);
           }
         }
@@ -438,6 +458,12 @@ export class Home implements OnInit, OnDestroy {
         const active = this.selectedContact();
         if (active && active.username.toLowerCase() === contactUsername.toLowerCase()) {
           const prevCount = active.messages?.length || 0;
+          if (prevCount > 0 && formattedMsgs.length > prevCount) {
+            const lastMsg = formattedMsgs[formattedMsgs.length - 1];
+            if (!lastMsg.isMine) {
+              this.soundService.playNotificationSound();
+            }
+          }
           this.selectedContact.set({
             ...active,
             messages: formattedMsgs,
@@ -522,10 +548,18 @@ export class Home implements OnInit, OnDestroy {
     const cleanUname = uname.toLowerCase();
     this.accountService.login({ username: cleanUname, password: pass }).subscribe({
       next: () => {
-        this.cryptoService.initializeIdentity(cleanUname);
+        const userTheme = localStorage.getItem(`theme_${cleanUname}`) || localStorage.getItem('theme') || 'dark';
+        this.currentTheme.set(userTheme);
+        if (typeof document !== 'undefined') {
+          document.documentElement.setAttribute('data-theme', userTheme);
+        }
+        localStorage.setItem('theme', userTheme);
+
+        this.cryptoService.initializeIdentity(cleanUname).then(() => {
+          this.loadLiveData();
+        });
         this.toastService.success(`Welcome back, ${cleanUname}!`);
         this.loginModel = { username: '', password: '' };
-        this.loadLiveData();
         this.checkUrlJoinParam();
       },
     });
@@ -549,10 +583,11 @@ export class Home implements OnInit, OnDestroy {
     const cleanUname = uname.toLowerCase();
     this.accountService.register({ username: cleanUname, password: pass }).subscribe({
       next: () => {
-        this.cryptoService.initializeIdentity(cleanUname);
+        this.cryptoService.initializeIdentity(cleanUname).then(() => {
+          this.loadLiveData();
+        });
         this.toastService.success(`Welcome ${cleanUname}! Account created.`);
         this.registerModel = { username: '', password: '' };
-        this.loadLiveData();
         this.checkUrlJoinParam();
       },
     });
@@ -630,7 +665,16 @@ export class Home implements OnInit, OnDestroy {
         text,
         cryptoPayload
       ).subscribe({
-        next: () => {
+        next: (createdMsg: any) => {
+          if (createdMsg && (createdMsg.id || createdMsg.Id)) {
+            const msgId = createdMsg.id || createdMsg.Id;
+            this.cryptoService.setCachedResult(msgId, {
+              text: text,
+              isEncrypted: true,
+              verificationStatus: 'verified'
+            });
+          }
+          this.soundService.playSentSound();
           this.messageText.set('');
           this.firstUnreadMessageId.set(null);
           this.unreadCountInChat.set(0);
@@ -687,6 +731,11 @@ export class Home implements OnInit, OnDestroy {
   openEditProfile() {
     this.showEditProfile.set(true);
     this.showProfileMenu.set(false);
+  }
+
+  openReportModal() {
+    this.closeDropdowns();
+    this.reportService.openModal();
   }
 
 

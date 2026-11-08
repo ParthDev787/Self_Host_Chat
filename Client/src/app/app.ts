@@ -1,10 +1,11 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { AccountService } from '../core/services/account-service';
+import { ReportModal } from '../shared/report/report-modal';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, ReportModal],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

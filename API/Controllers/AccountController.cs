@@ -40,6 +40,13 @@ public class AccountController(IAccountService accountService) : BaseApiControll
         return Ok(new { message = "Logged out successfully" });
     }
 
+    [HttpPut("theme")]
+    public async Task<IActionResult> UpdateTheme([FromBody] UpdateThemeDto dto)
+    {
+        await accountService.UpdateThemeAsync(dto.Username, dto.Theme);
+        return Ok(new { message = "Theme updated successfully", theme = dto.Theme });
+    }
+
     private void SetRefreshTokenCookie(string refreshToken)
     {
         var cookieOptions = new CookieOptions

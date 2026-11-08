@@ -2,17 +2,11 @@ import { HttpInterceptorFn, HttpResponse, HttpErrorResponse } from '@angular/com
 import { tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-// Auto-purge any legacy client logs or sensitive keys from localStorage
+// Auto-purge legacy client logs from localStorage
 if (typeof window !== 'undefined') {
   try {
     localStorage.removeItem('dating_app_client_logs');
     localStorage.removeItem('dating_app_requests');
-    for (let i = localStorage.length - 1; i >= 0; i--) {
-      const k = localStorage.key(i);
-      if (k?.startsWith('signal_identity_')) {
-        localStorage.removeItem(k);
-      }
-    }
   } catch {}
 }
 

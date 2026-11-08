@@ -18,6 +18,7 @@ Every message is **end-to-end encrypted** using the Signal Protocol (the same cr
 | 🟢 **Online Presence** | See if your contacts are currently online or when they were last seen. |
 | 📬 **Unread Badges & Read Receipts** | See how many unread messages you have per contact; messages show ✓✓ when read. |
 | 🎨 **21 Themes** | Pick from 21 visual themes (dark, synthwave, dracula, cyberpunk, and more) — saved to your browser. |
+| 🐛 **Issue & Feedback Reporting** | WhatsApp/Facebook style floating popup to report bugs, send suggestions, and attach up to 3 images (max 200 KB each) + 1 video, delivered directly to your email inbox. |
 
 ---
 
@@ -165,3 +166,35 @@ For the full technical breakdown with sequence diagrams and math specs, see:
 | `POST` | `/api/connections/keys` | Upload your public key |
 | `GET` | `/api/connections/keys/{username}` | Get someone's public key |
 | `POST` | `/api/connections/heartbeat` | Update your online status |
+| `POST` | `/api/report` | Submit bug report / feedback with screenshots & video |
+
+---
+
+## 📬 Issue & Feedback Reporting (Email Setup)
+
+Users can click the floating **"Report Issue"** button at the bottom-right of the screen to open a WhatsApp/Facebook-styled popup.
+
+### Features
+* **Auto User Detection:** Auto-fills with the logged-in username.
+* **Categories:** Bug / Issue, Feature Suggestion, Chat / Realtime Issue, Security / E2EE, or Other.
+* **Smart File Validation:**
+  * **Images:** Up to 3 images, each strictly $\le$ 200 KB (with instant previews and ✕ remove buttons).
+  * **Video:** Up to 1 screen recording video (max 25 MB).
+* **Zero-Loss Storage:** Every report is backed up locally in `API/Reports/{reportId}/` on disk, so you never lose feedback even if your SMTP server is offline.
+* **Instant Delivery:** When configured, an HTML summary with all attachments is emailed directly to your inbox.
+
+### Configuring SMTP (in `API/appsettings.json`)
+
+```json
+"Smtp": {
+  "Host": "smtp.gmail.com",
+  "Port": 587,
+  "Username": "your-email@gmail.com",
+  "Password": "your-16-char-google-app-password",
+  "FromName": "Self-Host Chat Reports",
+  "ToEmail": "your-personal-or-dev-email@gmail.com"
+}
+```
+
+> **Gmail Tip:** If using Gmail, enable 2-Step Verification and generate an **App Password** from your Google Account security settings. Use that 16-character code as the `Password`.
+

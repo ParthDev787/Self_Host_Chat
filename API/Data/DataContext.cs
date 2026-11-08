@@ -11,6 +11,7 @@ public class DataContext(DbContextOptions<DataContext> options) : DbContext(opti
     public DbSet<UserConnection> UserConnections { get; set; }
     public DbSet<ChatMessageEntity> ChatMessages { get; set; }
     public DbSet<UserPublicKey> UserPublicKeys { get; set; }
+    public DbSet<IssueReport> IssueReports { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -48,5 +49,11 @@ public class DataContext(DbContextOptions<DataContext> options) : DbContext(opti
         modelBuilder.Entity<UserPublicKey>()
             .HasIndex(p => p.Username)
             .IsUnique();
+
+        modelBuilder.Entity<IssueReport>()
+            .HasIndex(r => r.Username);
+
+        modelBuilder.Entity<IssueReport>()
+            .HasIndex(r => r.CreatedAt);
     }
 }

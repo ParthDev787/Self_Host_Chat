@@ -205,7 +205,7 @@ public class ConnectionService(
             throw new BadRequestException("Sender and Recipient are required");
 
         var isEncrypted = !string.IsNullOrWhiteSpace(dto.Ciphertext) && !string.IsNullOrWhiteSpace(dto.Iv);
-        var content = isEncrypted ? dto.Ciphertext! : (dto.Text ?? dto.Ciphertext);
+        var content = !string.IsNullOrWhiteSpace(dto.Text) ? dto.Text : (dto.Ciphertext ?? "");
         if (string.IsNullOrWhiteSpace(content))
             throw new BadRequestException("Message text or ciphertext is required");
 

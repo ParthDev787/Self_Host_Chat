@@ -48,6 +48,11 @@ export class AccountService {
 
   setCurrentUser(user: User | null) {
     if (user && user.username && typeof user.username === 'string' && user.username.trim() && user.token) {
+      if (user.theme && typeof localStorage !== 'undefined' && typeof document !== 'undefined') {
+        localStorage.setItem('theme', user.theme);
+        localStorage.setItem(`theme_${user.username.trim().toLowerCase()}`, user.theme);
+        document.documentElement.setAttribute('data-theme', user.theme);
+      }
       localStorage.setItem('user', JSON.stringify(user));
       this.currentUser.set(user);
     } else {
@@ -56,27 +61,19 @@ export class AccountService {
     }
   }
 
+  updateTheme(username: string, theme: string) {
+    return this.http.put<{ message: string; theme: string }>(
+      this.baseUrl + 'account/theme',
+      { username, theme },
+      { withCredentials: true }
+    );
+  }
+
   logout() {
     this.http.post(this.baseUrl + 'account/logout', {}, { withCredentials: true }).subscribe({
       error: () => {}
     });
     localStorage.removeItem('user');
     this.currentUser.set(null);
-
-    // Completely wipe all sensitive identity keys from both sessionStorage and localStorage
-    try {
-      for (let i = sessionStorage.length - 1; i >= 0; i--) {
-        const k = sessionStorage.key(i);
-        if (k?.startsWith('signal_identity_')) {
-          sessionStorage.removeItem(k);
-        }
-      }
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const k = localStorage.key(i);
-        if (k?.startsWith('signal_identity_') || k === 'dating_app_requests') {
-          localStorage.removeItem(k);
-        }
-      }
-    } catch {}
   }
 }

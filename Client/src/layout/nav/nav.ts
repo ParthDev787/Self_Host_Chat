@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AccountService } from '../../core/services/account-service';
 import { ToastService } from '../../core/services/toast-service';
+import { ReportService } from '../../core/services/report-service';
 
 @Component({
   selector: 'app-nav',
@@ -13,6 +14,11 @@ import { ToastService } from '../../core/services/toast-service';
 export class Nav {
   protected accountService = inject(AccountService);
   private toastService = inject(ToastService);
+  protected reportService = inject(ReportService);
+
+  openReport() {
+    this.reportService.openModal();
+  }
 
   model = {
     username: '',

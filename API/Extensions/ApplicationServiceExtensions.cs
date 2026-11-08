@@ -19,6 +19,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IConnectionService, ConnectionService>();
+        services.AddScoped<IReportService, ReportService>();
 
         return services;
     }

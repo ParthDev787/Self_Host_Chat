@@ -71,11 +71,28 @@ public static class DbInitializer
                     CREATE INDEX IF NOT EXISTS IX_ConnectionRequests_FromUsername ON ConnectionRequests (FromUsername);
                     CREATE INDEX IF NOT EXISTS IX_UserConnections_User1_User2 ON UserConnections (User1, User2);
                     CREATE INDEX IF NOT EXISTS IX_UserPublicKeys_Username ON UserPublicKeys (Username);
+
+                    CREATE TABLE IF NOT EXISTS IssueReports (
+                        Id TEXT PRIMARY KEY,
+                        Username TEXT NOT NULL,
+                        Category TEXT NOT NULL,
+                        Description TEXT NOT NULL,
+                        ClientIp TEXT,
+                        CreatedAt TEXT NOT NULL,
+                        ImageCount INTEGER DEFAULT 0,
+                        HasVideo INTEGER DEFAULT 0,
+                        AttachmentNames TEXT,
+                        Status TEXT NOT NULL,
+                        ErrorMessage TEXT
+                    );
+                    CREATE INDEX IF NOT EXISTS IX_IssueReports_Username ON IssueReports (Username);
+                    CREATE INDEX IF NOT EXISTS IX_IssueReports_CreatedAt ON IssueReports (CreatedAt);
                 ";
                 await cmd.ExecuteNonQueryAsync();
 
-                // Safely ensure new columns exist in ChatMessages if table already existed
+                // Safely ensure new columns exist in ChatMessages and Users if table already existed
                 string[] alterQueries = [
+                    "ALTER TABLE Users ADD COLUMN Theme TEXT DEFAULT 'dark';",
                     "ALTER TABLE ChatMessages ADD COLUMN Ciphertext TEXT;",
                     "ALTER TABLE ChatMessages ADD COLUMN Iv TEXT;",
                     "ALTER TABLE ChatMessages ADD COLUMN Mac TEXT;",

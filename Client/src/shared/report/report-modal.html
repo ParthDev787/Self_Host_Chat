@@ -1,0 +1,232 @@
+<!-- Modal Overlay & Dialog -->
+@if (isOpen()) {
+  <div class="report-modal-overlay" (click)="close()">
+    <div class="report-modal-container" (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="report-modal-header">
+        <div class="flex items-center gap-3">
+          <div class="report-icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" class="size-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-base-content leading-tight">Report an Issue or Suggestion</h3>
+            <p class="text-xs text-base-content/60">We review every report and respond via email.</p>
+          </div>
+        </div>
+        <button 
+          type="button" 
+          (click)="close()" 
+          [disabled]="isSubmitting()"
+          class="btn btn-sm btn-circle btn-ghost text-base-content/70 hover:text-base-content">
+          ✕
+        </button>
+      </div>
+
+      <!-- Body / Form -->
+      <div class="report-modal-body">
+        <!-- User Info Row -->
+        <div class="report-field">
+          <label class="text-xs font-semibold uppercase tracking-wider text-base-content/70 flex items-center justify-between">
+            <span>Your Name / Username</span>
+            <span class="badge badge-sm badge-ghost text-xs">
+              {{ accountService.currentUser() ? 'Logged In' : 'Guest' }}
+            </span>
+          </label>
+          <input 
+            type="text" 
+            [ngModel]="customUsername()" 
+            (ngModelChange)="customUsername.set($event)"
+            placeholder="Your name or username"
+            class="input input-bordered input-sm w-full bg-base-200/50 focus:bg-base-100" />
+        </div>
+
+        <!-- Category Dropdown / Cards -->
+        <div class="report-field">
+          <label class="text-xs font-semibold uppercase tracking-wider text-base-content/70">
+            Category <span class="text-error">*</span>
+          </label>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1">
+            @for (cat of categories; track cat.id) {
+              <button 
+                type="button"
+                (click)="category.set(cat.id)"
+                [class.active-cat]="category() === cat.id"
+                class="cat-chip">
+                <span class="font-medium text-xs">{{ cat.label }}</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Description Box -->
+        <div class="report-field">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold uppercase tracking-wider text-base-content/70">
+              Description <span class="text-error">*</span>
+            </label>
+            <span class="text-xs text-base-content/50">
+              {{ description().length }} / 4000
+            </span>
+          </div>
+          <textarea 
+            [ngModel]="description()" 
+            (ngModelChange)="description.set($event)"
+            rows="4" 
+            placeholder="Tell us what happened, any error messages you saw, or your idea for improvement..."
+            class="textarea textarea-bordered w-full bg-base-200/50 focus:bg-base-100 text-sm leading-relaxed mt-1"
+            maxlength="4000"></textarea>
+        </div>
+
+        <!-- Image Upload Section -->
+        <div class="report-field">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold uppercase tracking-wider text-base-content/70 flex items-center gap-1.5">
+              <span>Screenshots / Images</span>
+              <span class="badge badge-xs badge-info font-normal">Max 3 • &le; 200 KB each</span>
+            </label>
+            <span class="text-xs text-base-content/50">
+              {{ selectedImages().length }} / {{ MAX_IMAGES }}
+            </span>
+          </div>
+
+          <!-- Image Error Banner -->
+          @if (imageError()) {
+            <div class="alert alert-warning text-xs py-2 px-3 my-2 flex items-center gap-2 rounded-lg">
+              <span>{{ imageError() }}</span>
+            </div>
+          }
+
+          <!-- Image Previews Grid -->
+          <div class="flex flex-wrap gap-2.5 mt-2">
+            @for (img of selectedImages(); track $index) {
+              <div class="image-preview-card">
+                <img [src]="img.previewUrl" [alt]="img.file.name" class="image-preview-thumb" />
+                <div class="image-preview-overlay">
+                  <span class="image-size-badge">{{ img.sizeKb }} KB</span>
+                  <button 
+                    type="button" 
+                    (click)="removeImage($index)" 
+                    title="Remove image"
+                    class="image-remove-btn">
+                    ✕
+                  </button>
+                </div>
+              </div>
+            }
+
+            <!-- Add Image Button -->
+            @if (selectedImages().length < MAX_IMAGES) {
+              <button 
+                type="button" 
+                (click)="imageFileInput.click()" 
+                class="image-add-btn"
+                title="Add screenshot (max 200 KB)">
+                <svg xmlns="http://www.w3.org/2000/svg" class="size-5 text-base-content/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span class="text-[11px] font-medium text-base-content/70 mt-1">Add Image</span>
+              </button>
+            }
+          </div>
+
+          <input 
+            #imageFileInput 
+            type="file" 
+            accept="image/*" 
+            multiple 
+            (change)="onImagesSelected($event)" 
+            class="hidden" />
+        </div>
+
+        <!-- Video Upload Section -->
+        <div class="report-field">
+          <label class="text-xs font-semibold uppercase tracking-wider text-base-content/70 flex items-center justify-between">
+            <span class="flex items-center gap-1.5">
+              <span>Short Video Screen Recording</span>
+              <span class="badge badge-xs badge-info font-normal">Optional • Max 1 (25 MB)</span>
+            </span>
+          </label>
+
+          @if (videoError()) {
+            <div class="alert alert-warning text-xs py-2 px-3 my-2 flex items-center gap-2 rounded-lg">
+              <span>{{ videoError() }}</span>
+            </div>
+          }
+
+          @if (selectedVideo()) {
+            <div class="video-preview-card mt-2">
+              <div class="flex items-center gap-2.5 flex-1 min-w-0">
+                <div class="video-icon-badge">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="size-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2zm0 2v12h16V6H4zm6 3l6 3.5-6 3.5V9z" />
+                  </svg>
+                </div>
+                <div class="truncate">
+                  <div class="text-xs font-semibold truncate">{{ selectedVideo()!.name }}</div>
+                  <div class="text-[10px] text-base-content/60">{{ selectedVideo()!.sizeMb }} MB</div>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                (click)="removeVideo()" 
+                title="Remove video"
+                class="btn btn-xs btn-ghost btn-circle text-error">
+                ✕
+              </button>
+            </div>
+          } @else {
+            <button 
+              type="button" 
+              (click)="videoFileInput.click()" 
+              class="video-add-btn mt-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <span>Attach Video Recording</span>
+            </button>
+          }
+
+          <input 
+            #videoFileInput 
+            type="file" 
+            accept="video/*" 
+            (change)="onVideoSelected($event)" 
+            class="hidden" />
+        </div>
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="report-modal-footer">
+        <button 
+          type="button" 
+          (click)="close()" 
+          [disabled]="isSubmitting()"
+          class="btn btn-sm btn-ghost">
+          Cancel
+        </button>
+        <button 
+          type="button" 
+          (click)="submitReport()" 
+          [disabled]="isSubmitting() || !description().trim()"
+          class="btn btn-sm btn-primary gap-2 min-w-32">
+          @if (isSubmitting()) {
+            <span class="loading loading-spinner loading-xs"></span>
+            <span>Sending...</span>
+          } @else {
+            <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
+            <span>Submit Report</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+

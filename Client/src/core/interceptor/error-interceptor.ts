@@ -59,7 +59,15 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             return handle401Error(req, next, accountService, route, toast);
 
           case 404:
-            route.navigateByUrl('/not-found');
+            // Do NOT navigate to /not-found for API endpoints or report submissions
+            if (req.url.includes('/api/') || req.url.includes('report')) {
+              const msg = typeof error.error === 'string'
+                ? error.error
+                : (error.error?.message || error.error?.title || 'Resource or endpoint not found (404)');
+              toast.error(msg);
+            } else {
+              route.navigateByUrl('/not-found');
+            }
             break;
 
           case 500:

@@ -22,4 +22,10 @@ public class UserRepository(DataContext context) : IUserRepository
         context.Users.Add(user);
         await context.SaveChangesAsync();
     }
+
+    public async Task UpdateAsync(AppUser user)
+    {
+        context.Users.Update(user);
+        await context.SaveChangesAsync();
+    }
 }

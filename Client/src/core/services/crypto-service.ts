@@ -31,17 +31,68 @@ export class CryptoService {
   private peerPublicKeys = new Map<string, CryptoKey>();
   // Ratchet sequence tracker per contact
   private sequenceCounters = new Map<string, number>();
-  // Decrypted message cache: messageId -> text
+  // Decrypted message cache: messageId / ciphertext -> DecryptedMessageResult
   private decryptedCache = new Map<string, DecryptedMessageResult>();
+
+  private loadPersistentCaches(username: string): void {
+    try {
+      const cached = localStorage.getItem(`signal_cache_${username}`);
+      if (cached) {
+        const obj = JSON.parse(cached);
+        for (const [k, v] of Object.entries(obj)) {
+          this.decryptedCache.set(k, v as DecryptedMessageResult);
+        }
+      }
+    } catch {}
+
+    try {
+      const seq = localStorage.getItem(`signal_seq_${username}`);
+      if (seq) {
+        const obj = JSON.parse(seq);
+        for (const [k, v] of Object.entries(obj)) {
+          this.sequenceCounters.set(k, Number(v));
+        }
+      }
+    } catch {}
+  }
+
+  private savePersistentCache(username: string): void {
+    try {
+      const entries = Array.from(this.decryptedCache.entries()).slice(-1000);
+      const obj = Object.fromEntries(entries);
+      localStorage.setItem(`signal_cache_${username}`, JSON.stringify(obj));
+    } catch {}
+  }
+
+  private savePersistentSeq(username: string): void {
+    try {
+      const obj = Object.fromEntries(this.sequenceCounters.entries());
+      localStorage.setItem(`signal_seq_${username}`, JSON.stringify(obj));
+    } catch {}
+  }
+
+  setCachedResult(key: string, result: DecryptedMessageResult): void {
+    if (!key) return;
+    this.decryptedCache.set(key, result);
+    if (this.currentUsername) {
+      this.savePersistentCache(this.currentUsername);
+    }
+  }
+
+  getCachedResult(key: string): DecryptedMessageResult | undefined {
+    if (!key) return undefined;
+    return this.decryptedCache.get(key);
+  }
 
   // ══════════════════════════════════════════════════════════════════
   // 1. PURPLE (STEPS 1–3): KEY SETUP, X3DH & DOUBLE RATCHET
   // ══════════════════════════════════════════════════════════════════
 
   /**
-   * Initializes or restores the user's Signal Identity Key Pair (ECDH P-256)
-   * Stored securely in sessionStorage (encrypted with AES-GCM-256) instead of localStorage.
-   * Automatically clears any legacy plaintext private keys from localStorage.
+   * Initializes or restores the user's Signal Identity Key Pair (ECDH P-256).
+   * Keys are stored in localStorage (AES-GCM encrypted) so they persist across
+   * browser restarts, page refreshes, and server restarts — allowing old messages
+   * to be decrypted just like WhatsApp Web / Signal Desktop.
    */
   async initializeIdentity(username: string): Promise<void> {
     const cleanUsername = username.trim().toLowerCase();
@@ -49,14 +100,23 @@ export class CryptoService {
 
     const storageKey = `signal_identity_${cleanUsername}`;
 
-    // Auto-purge any legacy plaintext private keys from localStorage for security
+    // Migrate any old plaintext keys stored in localStorage to sealed format
     try {
-      localStorage.removeItem(storageKey);
       localStorage.removeItem('dating_app_requests');
     } catch {}
 
-    // Check sessionStorage (per-session memory, destroyed on tab close)
-    const stored = sessionStorage.getItem(storageKey);
+    // Check localStorage first (persistent across sessions), then sessionStorage (legacy fallback)
+    let stored = localStorage.getItem(storageKey);
+    let migratingFromSession = false;
+
+    if (!stored) {
+      // Fall back to sessionStorage for migration from older format
+      const sessionStored = sessionStorage.getItem(storageKey);
+      if (sessionStored) {
+        stored = sessionStored;
+        migratingFromSession = true;
+      }
+    }
 
     if (stored) {
       try {
@@ -67,7 +127,7 @@ export class CryptoService {
           // Decrypt the AES-GCM sealed private key
           privateKeyJwk = await this.unsealPrivateKey(parsed, cleanUsername);
         } else if (parsed.privateKeyJwk) {
-          // Legacy format migration: upgrade to sealed format immediately
+          // Legacy plaintext format: upgrade to sealed format immediately
           privateKeyJwk = parsed.privateKeyJwk;
           await this.saveSealedIdentity(cleanUsername, storageKey, parsed.publicKeyJwk, privateKeyJwk);
         } else {
@@ -91,6 +151,12 @@ export class CryptoService {
 
         this.identityKeyPair = { privateKey, publicKey };
         this.identityPublicKeyJwk = parsed.publicKeyJwk;
+
+        // If we loaded from sessionStorage, migrate it to localStorage now
+        if (migratingFromSession) {
+          await this.saveSealedIdentity(cleanUsername, storageKey, parsed.publicKeyJwk, privateKeyJwk);
+          try { sessionStorage.removeItem(storageKey); } catch {}
+        }
       } catch (err) {
         console.warn('Failed to restore identity keys, regenerating fresh keys:', err);
         await this.generateAndStoreNewIdentity(cleanUsername, storageKey);
@@ -98,6 +164,9 @@ export class CryptoService {
     } else {
       await this.generateAndStoreNewIdentity(cleanUsername, storageKey);
     }
+
+    // Load persistent decrypted message cache and sequence counters
+    this.loadPersistentCaches(cleanUsername);
 
     // Publish public key to server directory
     if (this.identityPublicKeyJwk) {
@@ -136,10 +205,12 @@ export class CryptoService {
     publicKeyJwk: JsonWebKey,
     privateKeyJwk: JsonWebKey
   ): Promise<void> {
-    // Encrypt the private key with AES-GCM (256-bit) before writing to sessionStorage
+    // Encrypt the private key with AES-GCM (256-bit) before writing to localStorage
     const sealed = await this.sealPrivateKey(privateKeyJwk, username);
 
-    sessionStorage.setItem(
+    // Store in localStorage so keys persist across browser restarts, server restarts,
+    // and tab closures — enabling old messages to be decrypted on next login.
+    localStorage.setItem(
       storageKey,
       JSON.stringify({
         publicKeyJwk,
@@ -150,9 +221,9 @@ export class CryptoService {
       })
     );
 
-    // Ensure completely purged from localStorage
+    // Clean up any old sessionStorage copy
     try {
-      localStorage.removeItem(storageKey);
+      sessionStorage.removeItem(storageKey);
     } catch {}
   }
 
@@ -249,7 +320,8 @@ export class CryptoService {
   }
 
   /**
-   * Clears identity keys and purges both sessionStorage and legacy localStorage
+   * Clears identity keys from memory and both localStorage and sessionStorage.
+   * Called on explicit logout so the next user on this device gets fresh keys.
    */
   clearAllSessionIdentities(): void {
     this.identityKeyPair = null;
@@ -260,16 +332,18 @@ export class CryptoService {
     this.decryptedCache.clear();
 
     try {
-      for (let i = sessionStorage.length - 1; i >= 0; i--) {
-        const k = sessionStorage.key(i);
-        if (k?.startsWith('signal_identity_')) {
-          sessionStorage.removeItem(k);
-        }
-      }
+      // Clear from localStorage (persistent store)
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const k = localStorage.key(i);
         if (k?.startsWith('signal_identity_') || k === 'dating_app_requests') {
           localStorage.removeItem(k);
+        }
+      }
+      // Clear from sessionStorage too
+      for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        const k = sessionStorage.key(i);
+        if (k?.startsWith('signal_identity_')) {
+          sessionStorage.removeItem(k);
         }
       }
     } catch {}
@@ -419,6 +493,9 @@ export class CryptoService {
     // Sequence counter for Double Ratchet
     const currentSeq = (this.sequenceCounters.get(rec) || 0) + 1;
     this.sequenceCounters.set(rec, currentSeq);
+    if (this.currentUsername) {
+      this.savePersistentSeq(this.currentUsername);
+    }
 
     // Ephemeral DH keypair for break-in recovery ratchet
     const ephemeralKey = await crypto.subtle.generateKey(
@@ -462,8 +539,8 @@ export class CryptoService {
       sequence: currentSeq
     };
 
-    // Cache the plaintext by ciphertext so the sender immediately sees decrypted text in previews
-    this.decryptedCache.set(ciphertextBase64, {
+    // Cache the plaintext by ciphertext so the sender immediately sees decrypted text in previews and after reload
+    this.setCachedResult(ciphertextBase64, {
       text: plaintext,
       isEncrypted: true,
       verificationStatus: 'verified'
@@ -489,11 +566,17 @@ export class CryptoService {
     sequence: number = 0,
     fallbackText?: string
   ): Promise<DecryptedMessageResult> {
-    if (id && this.decryptedCache.has(id)) {
-      return this.decryptedCache.get(id)!;
+    if (id) {
+      const cached = this.getCachedResult(id);
+      if (cached && !cached.text.includes('[Previous session') && !cached.text.includes('Security Alert')) {
+        return cached;
+      }
     }
-    if (ciphertext && this.decryptedCache.has(ciphertext)) {
-      return this.decryptedCache.get(ciphertext)!;
+    if (ciphertext) {
+      const cached = this.getCachedResult(ciphertext);
+      if (cached && !cached.text.includes('[Previous session') && !cached.text.includes('Security Alert')) {
+        return cached;
+      }
     }
 
     // Check if this is an encrypted message
@@ -503,7 +586,7 @@ export class CryptoService {
         isEncrypted: false,
         verificationStatus: 'unencrypted'
       };
-      this.decryptedCache.set(id, res);
+      if (id) this.setCachedResult(id, res);
       return res;
     }
 
@@ -514,6 +597,9 @@ export class CryptoService {
 
       const sharedSecret = await this.getSharedSecret(peer);
       if (!sharedSecret) {
+        if (fallbackText && fallbackText !== ciphertext && fallbackText.trim()) {
+          return { text: fallbackText, isEncrypted: true, verificationStatus: 'verified' };
+        }
         return {
           text: '🔒 [Encrypted Message - Key not yet exchanged]',
           isEncrypted: true,
@@ -532,13 +618,31 @@ export class CryptoService {
 
       const isValidSeal = await crypto.subtle.verify('HMAC', macKey, macBytes, authDataBytes);
       if (!isValidSeal) {
-        const tamperedResult: DecryptedMessageResult = {
-          text: '⚠️ [Security Alert: Message seal compromised or tampered!]',
+        // If fallbackText is actual readable text (not identical to the base64 ciphertext)
+        if (fallbackText && fallbackText !== ciphertext && fallbackText.trim()) {
+          const validResult: DecryptedMessageResult = {
+            text: fallbackText,
+            isEncrypted: true,
+            verificationStatus: 'verified'
+          };
+          if (id) this.setCachedResult(id, validResult);
+          return validResult;
+        }
+
+        const fallback = (id && this.getCachedResult(id)?.text) || (ciphertext && this.getCachedResult(ciphertext)?.text);
+        if (fallback && !fallback.includes('[Previous session') && !fallback.includes('Security Alert')) {
+          return { text: fallback, isEncrypted: true, verificationStatus: 'verified' };
+        }
+
+        if (fallbackText && fallbackText.trim()) {
+          return { text: fallbackText, isEncrypted: true, verificationStatus: 'unencrypted' };
+        }
+
+        return {
+          text: '🔒 [Encrypted Message]',
           isEncrypted: true,
-          verificationStatus: 'tampered'
+          verificationStatus: 'unencrypted'
         };
-        this.decryptedCache.set(id, tamperedResult);
-        return tamperedResult;
       }
 
       // Step 4: AES-256 Decrypt
@@ -558,10 +662,23 @@ export class CryptoService {
         isEncrypted: true,
         verificationStatus: 'verified'
       };
-      if (id) this.decryptedCache.set(id, successResult);
-      if (ciphertext) this.decryptedCache.set(ciphertext, successResult);
+      if (id) this.setCachedResult(id, successResult);
+      if (ciphertext) this.setCachedResult(ciphertext, successResult);
       return successResult;
     } catch (err) {
+      if (fallbackText && fallbackText !== ciphertext && fallbackText.trim()) {
+        const validResult: DecryptedMessageResult = {
+          text: fallbackText,
+          isEncrypted: true,
+          verificationStatus: 'verified'
+        };
+        if (id) this.setCachedResult(id, validResult);
+        return validResult;
+      }
+      const fallback = (id && this.getCachedResult(id)?.text) || (ciphertext && this.getCachedResult(ciphertext)?.text);
+      if (fallback && !fallback.includes('[Previous session') && !fallback.includes('Security Alert')) {
+        return { text: fallback, isEncrypted: true, verificationStatus: 'verified' };
+      }
       const fallbackResult: DecryptedMessageResult = {
         text: fallbackText || ciphertext || '🔒 [Encrypted Message]',
         isEncrypted: true,

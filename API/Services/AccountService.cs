@@ -36,7 +36,8 @@ public class AccountService(
         var userDto = new UserDto
         {
             Username = user.UserName,
-            Token = accessToken
+            Token = accessToken,
+            Theme = user.Theme ?? "dark"
         };
 
         return (userDto, refreshToken.Token);
@@ -60,7 +61,8 @@ public class AccountService(
         var userDto = new UserDto
         {
             Username = user.UserName,
-            Token = accessToken
+            Token = accessToken,
+            Theme = user.Theme ?? "dark"
         };
 
         return (userDto, refreshToken.Token);
@@ -92,7 +94,8 @@ public class AccountService(
         var userDto = new UserDto
         {
             Username = user.UserName,
-            Token = newAccessToken
+            Token = newAccessToken,
+            Theme = user.Theme ?? "dark"
         };
 
         return (userDto, newRefreshToken.Token);
@@ -108,5 +111,17 @@ public class AccountService(
             token.RevokedAt = DateTime.UtcNow;
             await refreshTokenRepo.UpdateAsync(token);
         }
+    }
+
+    public async Task UpdateThemeAsync(string username, string theme)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            throw new BadRequestException("Username is required");
+
+        var user = await userRepo.GetByUsernameAsync(username.ToLower())
+            ?? throw new NotFoundException("User not found");
+
+        user.Theme = string.IsNullOrWhiteSpace(theme) ? "dark" : theme.Trim().ToLower();
+        await userRepo.UpdateAsync(user);
     }
 }

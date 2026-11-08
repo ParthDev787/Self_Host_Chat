@@ -496,3 +496,7 @@ API/datingapp.db*
 *.db-wal
 datingapp.db*
 
+# Local report attachments
+API/Reports/
+Reports/
+
