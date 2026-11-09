@@ -7,13 +7,30 @@ namespace API.Repositories;
 
 public class MessageRepository(DataContext context) : IMessageRepository
 {
-    public async Task<List<ChatMessageEntity>> GetConversationAsync(string user1, string user2)
+    public async Task<List<ChatMessageEntity>> GetConversationAsync(
+        string user1, 
+        string user2, 
+        int limit = 30, 
+        string? beforeTimestamp = null)
     {
-        return await context.ChatMessages
+        var query = context.ChatMessages
             .Where(m => (m.Sender == user1 && m.Recipient == user2)
-                     || (m.Sender == user2 && m.Recipient == user1))
-            .OrderBy(m => m.Timestamp)
+                     || (m.Sender == user2 && m.Recipient == user1));
+
+        if (!string.IsNullOrWhiteSpace(beforeTimestamp))
+        {
+            query = query.Where(m => string.Compare(m.Timestamp, beforeTimestamp) < 0);
+        }
+
+        var safeLimit = Math.Clamp(limit, 1, 100);
+
+        var messages = await query
+            .OrderByDescending(m => m.Timestamp)
+            .Take(safeLimit)
             .ToListAsync();
+
+        messages.Reverse();
+        return messages;
     }
 
     public async Task<ChatMessageEntity?> GetLastMessageAsync(string user1, string user2)

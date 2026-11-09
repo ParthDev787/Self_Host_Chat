@@ -123,7 +123,7 @@
 <!-- ══════════════════════════════════════════════════════════════
      DASHBOARD (Logged in) – Sidebar + Chat
      ══════════════════════════════════════════════════════════════ -->
-<div class="flex h-screen overflow-hidden">
+<div class="flex h-screen h-[100dvh] overflow-hidden">
 
   <!-- Invisible backdrop to close dropdown menus when clicking outside -->
   @if (showProfileMenu() || showNotifications()) {
@@ -131,7 +131,7 @@
   }
 
   <!-- ──── LEFT SIDEBAR (Contacts) ──── -->
-  <aside class="sidebar-pane flex flex-col h-screen border-r border-base-300 bg-base-200"
+  <aside class="sidebar-pane flex flex-col h-full border-r border-base-300 bg-base-200"
     [class.has-active-chat]="selectedContact() !== null">
 
     <!-- Sidebar Header -->
@@ -446,7 +446,7 @@
   </aside>
 
   <!-- ──── RIGHT CHAT PANE ──── -->
-  <section class="chat-pane flex flex-col h-screen bg-base-100 relative"
+  <section class="chat-pane flex flex-col h-full bg-base-100 relative"
     [class.no-active-chat]="selectedContact() === null">
 
     @if (selectedContact()) {
@@ -485,6 +485,14 @@
 
 
     </div>
+
+    <!-- Floating Earlier Messages Loader (does NOT shift scroll container) -->
+    @if (isLoadingOlderMessages()) {
+      <div class="absolute top-18 left-1/2 -translate-x-1/2 z-20 py-1.5 px-4 rounded-full bg-base-100/95 dark:bg-base-200/95 backdrop-blur-md border border-base-300 shadow-md flex items-center justify-center gap-2 text-xs font-semibold select-none pointer-events-none transition-all">
+        <span class="loading loading-spinner loading-xs text-primary"></span>
+        <span class="text-base-content/80">Loading earlier messages...</span>
+      </div>
+    }
 
     <!-- Live Messages Stream -->
     <div #messagesContainer (scroll)="onMessagesScroll()" class="messages-container">

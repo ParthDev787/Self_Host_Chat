@@ -167,7 +167,9 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
+  scroll-behavior: auto;
+  will-change: scroll-position;
 }
 
 .msg-bubble {
@@ -177,12 +179,16 @@
   font-size: 0.925rem;
   line-height: 1.5;
   word-break: break-word;
-  animation: msgIn 0.2s ease;
+  animation: msgFadeIn 0.15s ease-out;
 }
 
-@keyframes msgIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes msgFadeIn {
+  0% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .msg-mine {
@@ -421,6 +427,8 @@
 
   .messages-container {
     padding: 12px 10px;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
   }
 
   .modal-card {
@@ -430,8 +438,8 @@
     padding: 20px;
   }
 
-  .chat-bubble {
-    max-width: 88%;
+  .msg-bubble {
+    max-width: 86% !important;
     word-break: break-word;
   }
 
@@ -461,18 +469,47 @@
   }
 }
 
-@media (min-width: 769px) {
+/* Tablet responsiveness (iPads & Android Tablets) */
+@media (min-width: 769px) and (max-width: 1024px) {
   .sidebar-pane {
     display: flex !important;
-    width: 360px !important;
-    min-width: 360px !important;
-    max-width: 360px !important;
+    width: 290px !important;
+    min-width: 290px !important;
+    max-width: 300px !important;
   }
 
   .chat-pane {
     display: flex !important;
     flex: 1 1 0% !important;
     min-width: 0 !important;
+  }
+
+  .msg-bubble {
+    max-width: 75% !important;
+  }
+
+  .mobile-back-btn {
+    display: none !important;
+  }
+}
+
+/* Desktop screens (1025px+) */
+@media (min-width: 1025px) {
+  .sidebar-pane {
+    display: flex !important;
+    width: 360px !important;
+    min-width: 360px !important;
+    max-width: 380px !important;
+  }
+
+  .chat-pane {
+    display: flex !important;
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
+  }
+
+  .msg-bubble {
+    max-width: 65%;
   }
 
   .mobile-back-btn {

@@ -10,6 +10,18 @@ export class ConnectionService {
   private http = inject(HttpClient);
   private baseUrl = environment.apiUrl;
 
+  // Unified single-call sync (replaces heartbeat + getRequests + getContacts + getMessages)
+  sync(activeChat?: string) {
+    const params: any = {};
+    if (activeChat) params.activeChat = activeChat;
+    return this.http.get<{
+      requests: any[];
+      contacts: any[];
+      activeMessages?: any[];
+      serverTime: string;
+    }>(this.baseUrl + 'connections/sync', { params });
+  }
+
   sendRequest(fromUsername: string, toUsername: string, message?: string) {
     return this.http.post<ConnectionRequest>(this.baseUrl + 'connections/request', {
       fromUsername,
@@ -51,10 +63,10 @@ export class ConnectionService {
     });
   }
 
-  getMessages(user1: string, user2: string) {
-    return this.http.get<ChatMessage[]>(this.baseUrl + 'connections/messages', {
-      params: { user1, user2 }
-    });
+  getMessages(user1: string, user2: string, limit: number = 30, beforeTimestamp?: string) {
+    const params: any = { user1, user2, limit };
+    if (beforeTimestamp) params.beforeTimestamp = beforeTimestamp;
+    return this.http.get<ChatMessage[]>(this.baseUrl + 'connections/messages', { params });
   }
 
   sendMessage(

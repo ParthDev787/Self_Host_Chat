@@ -1,9 +1,13 @@
+using System.Security.Claims;
 using API.DTOs;
 using API.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers;
 
+[EnableRateLimiting("AuthLimiter")]
 public class AccountController(IAccountService accountService) : BaseApiController
 {
     [HttpPost("register")]
@@ -40,10 +44,18 @@ public class AccountController(IAccountService accountService) : BaseApiControll
         return Ok(new { message = "Logged out successfully" });
     }
 
+    [Authorize]
     [HttpPut("theme")]
     public async Task<IActionResult> UpdateTheme([FromBody] UpdateThemeDto dto)
     {
-        await accountService.UpdateThemeAsync(dto.Username, dto.Theme);
+        if (string.IsNullOrWhiteSpace(dto.Username))
+            return BadRequest(new { message = "Username is required" });
+
+        var currentUsername = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (currentUsername != null && !string.Equals(currentUsername, dto.Username.Trim(), StringComparison.OrdinalIgnoreCase))
+            return Forbid();
+
+        await accountService.UpdateThemeAsync(dto.Username.Trim(), dto.Theme);
         return Ok(new { message = "Theme updated successfully", theme = dto.Theme });
     }
 
@@ -52,7 +64,7 @@ public class AccountController(IAccountService accountService) : BaseApiControll
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true,
-            Expires = DateTime.UtcNow.AddDays(1),
+            Expires = DateTime.UtcNow.AddDays(30),
             SameSite = SameSiteMode.Lax,
             Secure = Request.IsHttps,
             IsEssential = true

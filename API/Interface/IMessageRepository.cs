@@ -4,7 +4,7 @@ namespace API.Interface;
 
 public interface IMessageRepository
 {
-    Task<List<ChatMessageEntity>> GetConversationAsync(string user1, string user2);
+    Task<List<ChatMessageEntity>> GetConversationAsync(string user1, string user2, int limit = 30, string? beforeTimestamp = null);
     Task<ChatMessageEntity?> GetLastMessageAsync(string user1, string user2);
     Task<int> GetUnreadCountAsync(string sender, string recipient);
     Task<List<ChatMessageEntity>> GetUnreadMessagesAsync(string sender, string recipient);

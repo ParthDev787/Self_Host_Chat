@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace API.DTOs;
 
 public class UserDto
@@ -7,4 +9,7 @@ public class UserDto
     public string Theme { get; set; } = "dark";
 }
 
-public record UpdateThemeDto(string Username, string Theme);
+public record UpdateThemeDto(
+    [Required][MaxLength(50)] string Username,
+    [Required][MaxLength(30)] string Theme
+);

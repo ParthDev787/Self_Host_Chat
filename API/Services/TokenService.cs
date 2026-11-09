@@ -31,7 +31,7 @@ public class TokenService(IConfiguration config) : ITokenService
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(10), // 10 minutes access token
+            Expires = DateTime.UtcNow.AddDays(7), // 7-day access token for stable chatting sessions
             SigningCredentials = creds
         };
 
@@ -51,7 +51,7 @@ public class TokenService(IConfiguration config) : ITokenService
         {
             Username = username,
             Token = Convert.ToBase64String(randomNumber),
-            ExpiresAt = DateTime.UtcNow.AddDays(1), // 1 day refresh token
+            ExpiresAt = DateTime.UtcNow.AddDays(30), // 30-day refresh token
             CreatedAt = DateTime.UtcNow
         };
     }

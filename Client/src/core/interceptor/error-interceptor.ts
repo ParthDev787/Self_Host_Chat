@@ -70,6 +70,13 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             }
             break;
 
+          case 429:
+            const retryMsg = typeof error.error === 'string'
+              ? error.error
+              : (error.error?.error || error.error?.message || 'You are sending messages too quickly. Please wait a moment.');
+            toast.warning(retryMsg);
+            break;
+
           case 500:
             const navigationExtras: NavigationExtras = { state: { error: error.error } };
             route.navigateByUrl('/server-error', navigationExtras);
@@ -113,9 +120,12 @@ function handle401Error(
       catchError((refreshErr) => {
         isRefreshing = false;
         refreshTokenSubject.next(null);
-        accountService.logout();
-        toast.error('Session expired. Please log in again.');
-        route.navigateByUrl('/');
+        // Only log out if the refresh token endpoint itself returned 401 or 403 (meaning refresh token is truly expired/invalid)
+        if (refreshErr.status === 401 || refreshErr.status === 403) {
+          accountService.logout();
+          toast.error('Session expired. Please log in again.');
+          route.navigateByUrl('/');
+        }
         return throwError(() => refreshErr);
       })
     );

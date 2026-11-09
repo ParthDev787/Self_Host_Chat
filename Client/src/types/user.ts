@@ -20,6 +20,7 @@ export interface ChatMessage {
     recipientUsername?: string;
     text: string;
     timestamp: string;
+    rawTimestamp?: string;
     isMine: boolean;
     isDelivered?: boolean;
     isRead?: boolean;

@@ -75,8 +75,35 @@ public class AccountService(
 
         var existingToken = await refreshTokenRepo.GetByTokenAsync(refreshToken);
 
-        if (existingToken == null || !existingToken.IsActive)
+        if (existingToken == null)
+            throw new UnauthorizedException("Invalid refresh token");
+
+        // Concurrency grace period: if token was rotated in the last 60 seconds by a parallel request, return the replacement token
+        if (!existingToken.IsActive)
+        {
+            if (existingToken.RevokedAt != null && 
+                existingToken.RevokedAt > DateTime.UtcNow.AddSeconds(-60) && 
+                !string.IsNullOrEmpty(existingToken.ReplacedByToken))
+            {
+                var replacement = await refreshTokenRepo.GetByTokenAsync(existingToken.ReplacedByToken);
+                if (replacement != null && replacement.IsActive)
+                {
+                    var existingUser = await userRepo.GetByUsernameAsync(replacement.Username);
+                    if (existingUser != null)
+                    {
+                        var reissuedAccess = tokenService.CreateAccessToken(existingUser);
+                        return (new UserDto
+                        {
+                            Username = existingUser.UserName,
+                            Token = reissuedAccess,
+                            Theme = existingUser.Theme ?? "dark"
+                        }, replacement.Token);
+                    }
+                }
+            }
+
             throw new UnauthorizedException("Invalid or expired refresh token");
+        }
 
         var user = await userRepo.GetByUsernameAsync(existingToken.Username)
             ?? throw new UnauthorizedException("User no longer exists");

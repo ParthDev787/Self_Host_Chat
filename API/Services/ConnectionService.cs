@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
 using API.DTOs;
 using API.Entities;
 using API.Errors;
@@ -12,6 +13,43 @@ public class ConnectionService(
     IKeyRepository keyRepo) : IConnectionService
 {
     private static readonly ConcurrentDictionary<string, DateTime> _presenceMap = new(StringComparer.OrdinalIgnoreCase);
+
+    // ══════════════════════════════════════════════
+    //  UNIFIED FAST SYNC (Batch API call)
+    // ══════════════════════════════════════════════
+
+    public async Task<object> GetSyncDataAsync(string username, string? activeChatWith, int limit = 30)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            throw new BadRequestException("Username is required");
+
+        var user = username.Trim().ToLower();
+
+        // 1. Update presence heartbeat in memory
+        _presenceMap[user] = DateTime.UtcNow;
+
+        // 2. Fetch pending and rejected requests
+        var requests = await connectionRepo.GetPendingAndRejectedRequestsAsync(user);
+
+        // 3. Fetch contacts with latest message and unread counts
+        var contacts = await GetContactsAsync(user);
+
+        // 4. If an active conversation is open, fetch the latest 'limit' messages (default 30)
+        List<ChatMessageEntity>? activeMessages = null;
+        if (!string.IsNullOrWhiteSpace(activeChatWith))
+        {
+            var other = activeChatWith.Trim().ToLower();
+            activeMessages = await messageRepo.GetConversationAsync(user, other, limit);
+        }
+
+        return new
+        {
+            requests,
+            contacts,
+            activeMessages,
+            serverTime = DateTime.UtcNow.ToString("o")
+        };
+    }
 
     // ══════════════════════════════════════════════
     //  CONNECTION REQUESTS
@@ -28,12 +66,12 @@ public class ConnectionService(
         // Extract username if a full link was passed (e.g. http://localhost:4200/?join=admin)
         if (rawTo.Contains("join="))
         {
-            var match = System.Text.RegularExpressions.Regex.Match(rawTo, @"[?&]join=([^&#/?\s]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            var match = Regex.Match(rawTo, @"[?&]join=([^&#/?\s]+)", RegexOptions.IgnoreCase);
             if (match.Success) rawTo = match.Groups[1].Value;
         }
         else if (rawTo.Contains("/connect/"))
         {
-            var match = System.Text.RegularExpressions.Regex.Match(rawTo, @"/connect/([^&#/?\s]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            var match = Regex.Match(rawTo, @"/connect/([^&#/?\s]+)", RegexOptions.IgnoreCase);
             if (match.Success) rawTo = match.Groups[1].Value;
         }
 
@@ -77,10 +115,16 @@ public class ConnectionService(
         return await connectionRepo.GetPendingAndRejectedRequestsAsync(username.Trim().ToLower());
     }
 
-    public async Task<object> AcceptRequestAsync(string id)
+    public async Task<object> AcceptRequestAsync(string id, string? currentUsername = null)
     {
         var req = await connectionRepo.GetRequestByIdAsync(id)
             ?? throw new NotFoundException("Connection request not found");
+
+        if (!string.IsNullOrWhiteSpace(currentUsername) &&
+            !string.Equals(req.ToUsername, currentUsername, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ForbiddenException("You can only accept connection requests sent to you");
+        }
 
         req.Status = "accepted";
 
@@ -112,10 +156,16 @@ public class ConnectionService(
         return new { message = "Connection accepted", request = req };
     }
 
-    public async Task<object> RejectRequestAsync(string id)
+    public async Task<object> RejectRequestAsync(string id, string? currentUsername = null)
     {
         var req = await connectionRepo.GetRequestByIdAsync(id)
             ?? throw new NotFoundException("Connection request not found");
+
+        if (!string.IsNullOrWhiteSpace(currentUsername) &&
+            !string.Equals(req.ToUsername, currentUsername, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ForbiddenException("You can only reject connection requests sent to you");
+        }
 
         req.Status = "rejected";
         req.Timestamp = DateTime.UtcNow.ToString("o");
@@ -124,11 +174,18 @@ public class ConnectionService(
         return new { message = "Connection rejected", request = req };
     }
 
-    public async Task DismissRequestAsync(string id)
+    public async Task DismissRequestAsync(string id, string? currentUsername = null)
     {
         var req = await connectionRepo.GetRequestByIdAsync(id);
         if (req != null)
         {
+            if (!string.IsNullOrWhiteSpace(currentUsername) &&
+                !string.Equals(req.FromUsername, currentUsername, StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(req.ToUsername, currentUsername, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ForbiddenException("You can only dismiss your own connection notifications");
+            }
+
             await connectionRepo.RemoveRequestAsync(req);
         }
     }
@@ -191,18 +248,28 @@ public class ConnectionService(
     //  MESSAGES
     // ══════════════════════════════════════════════
 
-    public async Task<List<ChatMessageEntity>> GetMessagesAsync(string user1, string user2)
+    public async Task<List<ChatMessageEntity>> GetMessagesAsync(
+        string user1,
+        string user2,
+        int limit = 30,
+        string? beforeTimestamp = null)
     {
         if (string.IsNullOrWhiteSpace(user1) || string.IsNullOrWhiteSpace(user2))
             throw new BadRequestException("Both user1 and user2 are required");
 
-        return await messageRepo.GetConversationAsync(user1.Trim().ToLower(), user2.Trim().ToLower());
+        return await messageRepo.GetConversationAsync(user1.Trim().ToLower(), user2.Trim().ToLower(), limit, beforeTimestamp);
     }
 
     public async Task<ChatMessageEntity> SendMessageAsync(SendMessageDto dto)
     {
         if (string.IsNullOrWhiteSpace(dto.Sender) || string.IsNullOrWhiteSpace(dto.Recipient))
             throw new BadRequestException("Sender and Recipient are required");
+
+        var sender = dto.Sender.Trim().ToLower();
+        var recipient = dto.Recipient.Trim().ToLower();
+
+        if (!await connectionRepo.AreConnectedAsync(sender, recipient))
+            throw new ForbiddenException("You can only send messages to accepted connections");
 
         var isEncrypted = !string.IsNullOrWhiteSpace(dto.Ciphertext) && !string.IsNullOrWhiteSpace(dto.Iv);
         var content = !string.IsNullOrWhiteSpace(dto.Text) ? dto.Text : (dto.Ciphertext ?? "");
@@ -211,8 +278,8 @@ public class ConnectionService(
 
         var msg = new ChatMessageEntity
         {
-            Sender = dto.Sender.Trim().ToLower(),
-            Recipient = dto.Recipient.Trim().ToLower(),
+            Sender = sender,
+            Recipient = recipient,
             Text = content.Trim(),
             Ciphertext = isEncrypted ? dto.Ciphertext!.Trim() : null,
             Iv = isEncrypted ? dto.Iv?.Trim() : null,
